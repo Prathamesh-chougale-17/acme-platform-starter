@@ -45,6 +45,11 @@ runs:
         BETTER_AUTH_URL=${{ inputs.app-origin }}
         AUTH_FROM_EMAIL=${{ inputs.auth-from-email }}
         RESEND_API_KEY=
+        SMTP_HOST=
+        SMTP_PORT=
+        SMTP_SECURE=false
+        SMTP_USER=
+        SMTP_PASSWORD=
         API_SERVICE_NAME=acme-api
         API_SENTRY_DSN=
         API_LOG_LEVEL=warn
@@ -65,4 +70,9 @@ runs:
         BETTER_AUTH_URL=${{ inputs.app-origin }}
         AUTH_FROM_EMAIL=${{ inputs.auth-from-email }}
         RESEND_API_KEY=
+        SMTP_HOST=
+        SMTP_PORT=
+        SMTP_SECURE=false
+        SMTP_USER=
+        SMTP_PASSWORD=
         EOF

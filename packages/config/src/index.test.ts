@@ -32,6 +32,23 @@ describe('config', () => {
     expect(env.AUTH_FROM_EMAIL).toContain('auth@acme-platform.local');
   });
 
+  it('parses smtp auth env values when provided', () => {
+    const env = loadBetterAuthEnv({
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      BETTER_AUTH_SECRET: '12345678901234567890123456789012',
+      SMTP_HOST: 'smtp.example.com',
+      SMTP_PORT: '465',
+      SMTP_SECURE: 'true',
+      SMTP_USER: 'mailer',
+      SMTP_PASSWORD: 'password',
+    });
+
+    expect(env.SMTP_HOST).toBe('smtp.example.com');
+    expect(env.SMTP_PORT).toBe(465);
+    expect(env.SMTP_SECURE).toBe(true);
+    expect(env.SMTP_USER).toBe('mailer');
+  });
+
   it('rejects missing better-auth secrets', () => {
     expect(() =>
       loadBetterAuthEnv({

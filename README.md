@@ -12,7 +12,7 @@ This repository combines a Next.js frontend, a Hono API, Better Auth, shared Typ
 - Better Auth with database-backed sessions and organization-scoped RBAC
 - Shared packages for auth, config, database, logger, contracts, observability, UI, ESLint, and TypeScript presets
 - PostgreSQL with Drizzle schema and migration workflow
-- Resend-backed auth mailer with local capture fallback for development and tests
+- Resend-first auth mailer with Nodemailer SMTP fallback and local capture for development
 - Vitest unit and integration testing
 - Playwright E2E smoke coverage
 - Husky and lint-staged for commit-time quality gates
@@ -56,6 +56,7 @@ This repository combines a Next.js frontend, a Hono API, Better Auth, shared Typ
 - Drizzle ORM
 - Better Auth
 - Resend
+- Nodemailer
 
 ### Observability
 
@@ -274,12 +275,20 @@ These values must match anywhere they are defined:
 - `BETTER_AUTH_URL`
 - `AUTH_FROM_EMAIL`
 - `RESEND_API_KEY`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
 
 For local development:
 
 - keep `BETTER_AUTH_URL=http://localhost:3000`
 - use the same `BETTER_AUTH_SECRET` in both `apps/web/.env` and `apps/api/.env`
-- `RESEND_API_KEY` can be left empty in local development because the shared auth mailer captures emails in memory when Resend is not configured
+- Resend is preferred when `RESEND_API_KEY` is set
+- if Resend is not configured and SMTP credentials are complete, the shared auth mailer uses Nodemailer SMTP
+- if neither provider is configured, the shared auth mailer captures emails in memory outside production
+- in production, at least one real provider must be configured or auth emails will fail at send time
 
 Generate a dev secret:
 
@@ -376,6 +385,11 @@ Key variables:
 - `BETTER_AUTH_URL`
 - `AUTH_FROM_EMAIL`
 - `RESEND_API_KEY`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
 - `API_SERVICE_NAME`
 - `API_SENTRY_DSN`
 - `API_LOG_LEVEL`
@@ -400,6 +414,11 @@ Key variables:
 - `BETTER_AUTH_URL`
 - `AUTH_FROM_EMAIL`
 - `RESEND_API_KEY`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
 
 ## Scripts
 
@@ -534,8 +553,8 @@ Route protection is layered:
 
 1. owner or admin opens `/users`
 2. owner or admin submits the invite form
-3. Better Auth creates the invitation and the shared mailer sends an email
-4. in local development without Resend, the mailer falls back to in-memory capture so tests and local flows do not hard-fail
+3. Better Auth creates the invitation and the shared mailer sends through Resend or SMTP
+4. if neither provider is configured outside production, the mailer falls back to in-memory capture so local flows do not hard-fail
 5. the invited user opens `/accept-invite?invitationId=...`
 6. after sign-in or sign-up, the user accepts the invitation and joins the organization
 
@@ -544,7 +563,7 @@ Route protection is layered:
 1. open `/forgot-password`
 2. submit the account email
 3. Better Auth generates the reset link
-4. the shared mailer sends or captures the email
+4. the shared mailer sends through Resend or SMTP, or captures locally when neither provider is configured outside production
 5. open `/reset-password?token=...`
 6. submit the new password
 

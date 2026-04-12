@@ -1,9 +1,15 @@
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 
 import type { BetterAuthEnv } from '@acme/config';
 import { APP_NAME } from '@acme/shared';
 
 type AuthEmailType = 'invitation' | 'password-reset' | 'verification';
+type AuthEmailProvider = 'resend' | 'smtp' | 'capture';
+type AuthEmailPayload = Pick<AuthEmailRecord, 'subject' | 'html' | 'text'> & {
+  from: string;
+  to: string;
+};
 
 export type AuthEmailRecord = {
   type: AuthEmailType;
@@ -19,7 +25,68 @@ const recordCapturedEmail = (email: AuthEmailRecord) => {
   capturedEmails.push(email);
 };
 
-const createResendClient = (apiKey?: string) => (apiKey ? new Resend(apiKey) : undefined);
+type ResendClient = {
+  emails: {
+    send(payload: AuthEmailPayload): Promise<unknown>;
+  };
+};
+type SmtpClient = {
+  sendMail(payload: AuthEmailPayload): Promise<unknown>;
+};
+
+type AuthMailerDependencies = {
+  resendClient?: ResendClient;
+  smtpClient?: SmtpClient;
+};
+
+const createResendClient = (apiKey?: string): ResendClient | undefined =>
+  apiKey ? new Resend(apiKey) : undefined;
+
+const hasCompleteSmtpConfig = (env: BetterAuthEnv) =>
+  Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASSWORD);
+
+const createSmtpClient = (env: BetterAuthEnv): SmtpClient | undefined => {
+  if (!hasCompleteSmtpConfig(env)) {
+    return undefined;
+  }
+
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASSWORD,
+    },
+  });
+};
+
+const getMissingEmailProviderMessage = (env: BetterAuthEnv) => {
+  const missingSmtpFields = [
+    env.SMTP_HOST ? undefined : 'SMTP_HOST',
+    env.SMTP_PORT ? undefined : 'SMTP_PORT',
+    env.SMTP_USER ? undefined : 'SMTP_USER',
+    env.SMTP_PASSWORD ? undefined : 'SMTP_PASSWORD',
+  ].filter(Boolean);
+
+  return `Auth email provider is not configured. Set RESEND_API_KEY or complete SMTP settings (${missingSmtpFields.join(', ') || 'SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD'}).`;
+};
+
+export const resolveAuthEmailProvider = (env: BetterAuthEnv): AuthEmailProvider => {
+  if (env.RESEND_API_KEY) {
+    return 'resend';
+  }
+
+  if (hasCompleteSmtpConfig(env)) {
+    return 'smtp';
+  }
+
+  if (env.NODE_ENV !== 'production') {
+    return 'capture';
+  }
+
+  throw new Error(getMissingEmailProviderMessage(env));
+};
 
 const sanitizeRecipient = (to: string) => to.trim().toLowerCase();
 
@@ -55,16 +122,42 @@ const renderShell = (title: string, intro: string, actionLabel: string, actionUr
 const dispatchEmail = async (
   env: BetterAuthEnv,
   email: AuthEmailRecord,
-): Promise<{ provider: 'resend' | 'capture' }> => {
-  const resend = createResendClient(env.RESEND_API_KEY);
+  dependencies: AuthMailerDependencies = {},
+): Promise<{ provider: AuthEmailProvider }> => {
+  const provider = resolveAuthEmailProvider(env);
 
-  if (!resend || env.NODE_ENV === 'test') {
+  if (provider === 'capture') {
     recordCapturedEmail(email);
-    console.info(`[auth-email:${email.type}] ${email.to}`);
-    return { provider: 'capture' };
+    console.info('[auth-email]', { type: email.type, to: email.to, provider });
+    return { provider };
   }
 
-  await resend.emails.send({
+  if (provider === 'resend') {
+    const resend = dependencies.resendClient ?? createResendClient(env.RESEND_API_KEY);
+
+    if (!resend) {
+      throw new Error('Resend client could not be initialized.');
+    }
+
+    await resend.emails.send({
+      from: env.AUTH_FROM_EMAIL,
+      to: email.to,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    });
+
+    console.info('[auth-email]', { type: email.type, to: email.to, provider });
+    return { provider };
+  }
+
+  const smtpClient = dependencies.smtpClient ?? createSmtpClient(env);
+
+  if (!smtpClient) {
+    throw new Error('SMTP client could not be initialized.');
+  }
+
+  await smtpClient.sendMail({
     from: env.AUTH_FROM_EMAIL,
     to: email.to,
     subject: email.subject,
@@ -72,7 +165,9 @@ const dispatchEmail = async (
     text: email.text,
   });
 
-  return { provider: 'resend' };
+  console.info('[auth-email]', { type: email.type, to: email.to, provider });
+
+  return { provider };
 };
 
 export const clearCapturedAuthEmails = () => {
@@ -81,7 +176,10 @@ export const clearCapturedAuthEmails = () => {
 
 export const getCapturedAuthEmails = () => [...capturedEmails];
 
-export const createAuthMailer = (env: BetterAuthEnv) => ({
+export const createAuthMailer = (
+  env: BetterAuthEnv,
+  dependencies: AuthMailerDependencies = {},
+) => ({
   async sendPasswordReset(input: { email: string; name?: string | null; url: string }) {
     const content = renderShell(
       'Reset your password',
@@ -90,12 +188,16 @@ export const createAuthMailer = (env: BetterAuthEnv) => ({
       input.url,
     );
 
-    await dispatchEmail(env, {
-      type: 'password-reset',
-      to: sanitizeRecipient(input.email),
-      subject: `${APP_NAME}: reset your password`,
-      ...content,
-    });
+    await dispatchEmail(
+      env,
+      {
+        type: 'password-reset',
+        to: sanitizeRecipient(input.email),
+        subject: `${APP_NAME}: reset your password`,
+        ...content,
+      },
+      dependencies,
+    );
   },
 
   async sendVerification(input: { email: string; name?: string | null; url: string }) {
@@ -106,12 +208,16 @@ export const createAuthMailer = (env: BetterAuthEnv) => ({
       input.url,
     );
 
-    await dispatchEmail(env, {
-      type: 'verification',
-      to: sanitizeRecipient(input.email),
-      subject: `${APP_NAME}: verify your email`,
-      ...content,
-    });
+    await dispatchEmail(
+      env,
+      {
+        type: 'verification',
+        to: sanitizeRecipient(input.email),
+        subject: `${APP_NAME}: verify your email`,
+        ...content,
+      },
+      dependencies,
+    );
   },
 
   async sendInvitation(input: {
@@ -128,11 +234,15 @@ export const createAuthMailer = (env: BetterAuthEnv) => ({
       input.url,
     );
 
-    await dispatchEmail(env, {
-      type: 'invitation',
-      to: sanitizeRecipient(input.email),
-      subject: `${APP_NAME}: invitation to ${input.organizationName}`,
-      ...content,
-    });
+    await dispatchEmail(
+      env,
+      {
+        type: 'invitation',
+        to: sanitizeRecipient(input.email),
+        subject: `${APP_NAME}: invitation to ${input.organizationName}`,
+        ...content,
+      },
+      dependencies,
+    );
   },
 });

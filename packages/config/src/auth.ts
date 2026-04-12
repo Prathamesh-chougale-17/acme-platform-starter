@@ -13,6 +13,21 @@ const optionalString = z
   .optional()
   .transform((value) => (value ? value : undefined));
 
+const optionalPort = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? Number(value) : undefined))
+  .pipe(z.number().int().positive().optional());
+
+const optionalBooleanFlag = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value?.toLowerCase())
+  .pipe(z.enum(['true', 'false']).optional())
+  .transform((value) => value === 'true');
+
 const normalizeOptionalValue = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -39,6 +54,11 @@ export const BetterAuthEnvSchema = z.object({
   API_CORS_ORIGIN: z.string().default('http://localhost:3000'),
   AUTH_FROM_EMAIL: z.string().trim().default('Acme Platform <auth@acme-platform.local>'),
   RESEND_API_KEY: optionalString,
+  SMTP_HOST: optionalString,
+  SMTP_PORT: optionalPort,
+  SMTP_SECURE: optionalBooleanFlag.default(false),
+  SMTP_USER: optionalString,
+  SMTP_PASSWORD: optionalString,
   NEXT_PUBLIC_API_BASE_URL: optionalUrl,
 });
 
