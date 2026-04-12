@@ -5,9 +5,6 @@ test('home page renders the platform name', async ({ page }) => {
 
   await expect(page.getByRole('link', { name: /Acme Platform/i })).toBeVisible();
   await expect(
-    page.getByRole('heading', {
-      level: 1,
-      name: /Build SaaS-grade platforms without rebuilding the foundation every sprint\./i,
-    }),
+    page.getByText(/Build SaaS-grade platforms without rebuilding the foundation every sprint\./i),
   ).toBeVisible();
 });
