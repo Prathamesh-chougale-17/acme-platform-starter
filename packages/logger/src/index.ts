@@ -18,6 +18,7 @@ export type CreateLoggerOptions = {
   level?: LogLevel;
   lokiUrl?: string;
   enablePretty?: boolean;
+  enableLoki?: boolean;
 };
 
 export const getLoggerBindings = (bindings: LoggerBindings): LoggerBindings =>
@@ -49,7 +50,7 @@ const createTransport = (options: CreateLoggerOptions) => {
     });
   }
 
-  if (options.lokiUrl) {
+  if (options.enableLoki && options.lokiUrl) {
     targets.push({
       target: 'pino-loki',
       level: options.level ?? 'info',

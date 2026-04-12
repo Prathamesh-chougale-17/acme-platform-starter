@@ -12,7 +12,17 @@ const bootstrapLogger = createLogger({
   level: env.API_LOG_LEVEL,
   lokiUrl: env.LOKI_URL,
   enablePretty: env.NODE_ENV !== 'production',
+  enableLoki: env.API_LOG_TO_LOKI,
 });
+
+bootstrapLogger.info(
+  {
+    port: env.PORT,
+    logToLoki: env.API_LOG_TO_LOKI,
+    otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  },
+  'bootstrapping api server',
+);
 
 await startObservability({
   serviceName: env.API_SERVICE_NAME,

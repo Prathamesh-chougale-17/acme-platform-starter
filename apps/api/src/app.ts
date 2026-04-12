@@ -42,6 +42,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
     level: env.API_LOG_LEVEL,
     lokiUrl: env.LOKI_URL,
     enablePretty: env.NODE_ENV !== 'production',
+    enableLoki: env.API_LOG_TO_LOKI,
   });
 
   initSentry(env);
