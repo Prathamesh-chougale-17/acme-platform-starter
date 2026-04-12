@@ -13,6 +13,23 @@ const optionalString = z
   .optional()
   .transform((value) => (value ? value : undefined));
 
+const normalizeOptionalValue = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
+
+const deriveHostedUrl = (value: string | undefined): string | undefined => {
+  const hostedUrl = normalizeOptionalValue(value);
+
+  if (!hostedUrl) {
+    return undefined;
+  }
+
+  return hostedUrl.startsWith('http://') || hostedUrl.startsWith('https://')
+    ? hostedUrl
+    : `https://${hostedUrl}`;
+};
+
 export const BetterAuthEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.url(),
@@ -29,4 +46,18 @@ export type BetterAuthEnv = z.infer<typeof BetterAuthEnvSchema>;
 
 export const loadBetterAuthEnv = (
   source: Record<string, string | undefined> = process.env,
-): BetterAuthEnv => BetterAuthEnvSchema.parse(source);
+): BetterAuthEnv => {
+  const baseUrl =
+    normalizeOptionalValue(source.BETTER_AUTH_URL) ??
+    deriveHostedUrl(source.VERCEL_URL) ??
+    'http://localhost:3000';
+  const appOrigin = normalizeOptionalValue(source.APP_ORIGIN) ?? baseUrl;
+  const apiCorsOrigin = normalizeOptionalValue(source.API_CORS_ORIGIN) ?? appOrigin;
+
+  return BetterAuthEnvSchema.parse({
+    ...source,
+    BETTER_AUTH_URL: baseUrl,
+    APP_ORIGIN: appOrigin,
+    API_CORS_ORIGIN: apiCorsOrigin,
+  });
+};

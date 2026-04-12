@@ -32,10 +32,10 @@ const getErrorMessage = (error: unknown) =>
 
 export function HealthDashboard({
   environment,
-  apiBaseUrl,
+  apiAccessPath,
 }: {
   environment: string;
-  apiBaseUrl: string;
+  apiAccessPath: string;
 }) {
   const healthQuery = useHealthQuery();
   const health = healthQuery.data;
@@ -75,8 +75,8 @@ export function HealthDashboard({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Backend base URL</CardTitle>
-            <CardDescription className="font-mono text-primary">{apiBaseUrl}</CardDescription>
+            <CardTitle>Backend access path</CardTitle>
+            <CardDescription className="font-mono text-primary">{apiAccessPath}</CardDescription>
           </CardHeader>
         </Card>
         <Card>

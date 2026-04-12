@@ -15,6 +15,8 @@ import {
 
 import { publicEnv } from '@/lib/env';
 
+const DEPLOYMENT_API_ROUTE = '/api/v1';
+
 const platformPillars: Array<{ title: string; description: string; href: Route }> = [
   {
     title: 'Typed frontend',
@@ -77,10 +79,10 @@ export default function HomePage() {
             <Separator />
             <div className="rounded-2xl border border-border/80 bg-background/35 p-4">
               <dt className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                API base URL
+                API access path
               </dt>
               <dd className="mt-2 break-all font-mono text-sm text-primary">
-                {publicEnv.NEXT_PUBLIC_API_BASE_URL}
+                {DEPLOYMENT_API_ROUTE}
               </dd>
             </div>
           </CardContent>

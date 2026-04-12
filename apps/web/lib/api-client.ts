@@ -1,4 +1,3 @@
-import { loadWebEnv } from '@acme/config';
 import {
   CreateInvitationInputSchema,
   CurrentUserDtoSchema,
@@ -23,12 +22,6 @@ export class ApiClientError extends Error {
   }
 }
 
-const env = loadWebEnv({
-  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-});
-
 const REQUEST_TIMEOUT_MS = 8_000;
 
 const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
@@ -50,7 +43,7 @@ const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>)
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
+    const response = await fetch(path, {
       cache: 'no-store',
       credentials: 'include',
       ...init,
@@ -81,7 +74,7 @@ const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new ApiClientError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Confirm the API is running at ${env.NEXT_PUBLIC_API_BASE_URL}.`,
+        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Confirm the web API proxy is configured and the upstream API is reachable.`,
         504,
         'REQUEST_TIMEOUT',
       );

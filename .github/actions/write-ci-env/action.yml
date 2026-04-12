@@ -59,6 +59,7 @@ runs:
         cat > apps/web/.env <<EOF
         NEXT_PUBLIC_APP_ENV=development
         NEXT_PUBLIC_API_BASE_URL=${{ inputs.api-base-url }}
+        API_UPSTREAM_URL=${{ inputs.api-base-url }}
         NEXT_PUBLIC_SENTRY_DSN=
         BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}
         BETTER_AUTH_URL=${{ inputs.app-origin }}

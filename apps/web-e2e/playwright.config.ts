@@ -29,6 +29,7 @@ export default defineConfig({
       RESEND_API_KEY: '',
       NEXT_PUBLIC_APP_ENV: 'development',
       NEXT_PUBLIC_API_BASE_URL: 'http://localhost:3001',
+      API_UPSTREAM_URL: 'http://localhost:3001',
       NEXT_PUBLIC_SENTRY_DSN: '',
     },
   },
