@@ -138,7 +138,7 @@ export function SignUpForm({
       )}
       {notice ? <p className="text-sm text-amber-300">{notice}</p> : null}
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-      <Button className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Creating account...' : 'Create account'}
       </Button>
     </form>

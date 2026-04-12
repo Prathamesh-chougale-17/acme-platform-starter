@@ -67,7 +67,7 @@ export function ResetPasswordForm({ token }: { token: string | undefined }) {
         />
       </div>
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-      <Button className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Updating password...' : 'Reset password'}
       </Button>
     </form>

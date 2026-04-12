@@ -159,7 +159,7 @@ export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
                   <AlertDescription>{setupError}</AlertDescription>
                 </Alert>
               ) : null}
-              <Button disabled={isProvisioning}>
+              <Button type="submit" disabled={isProvisioning}>
                 {isProvisioning ? 'Provisioning organization...' : 'Create organization'}
               </Button>
             </form>
@@ -219,7 +219,11 @@ export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              <Button className="w-full" disabled={createInvitationMutation.isPending}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={createInvitationMutation.isPending}
+              >
                 {createInvitationMutation.isPending ? 'Sending invitation...' : 'Send invitation'}
               </Button>
             </form>
