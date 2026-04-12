@@ -1,159 +1,111 @@
-# Turborepo starter
+# Acme Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+Production-grade full-stack monorepo starter built with Turborepo, Next.js, Hono, Drizzle, PostgreSQL, and a local Grafana observability stack.
 
-## Using this example
+## Setup Strategy
 
-Run the following command:
+This starter uses official scaffolding first and then layers shared workspace packages for contracts, logging, observability, configuration, and database access. The frontend and backend stay thin by consuming transport-neutral Zod DTOs from `@acme/shared` and repository utilities from `@acme/db`.
 
-```sh
-npx create-turbo@latest
+## Exact Scaffold Commands
+
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+pnpm dlx create-turbo@latest acme-platform --package-manager pnpm --skip-install
+cd acme-platform
+node -e "const fs=require('node:fs'); ['apps/web','apps/docs','packages/ui'].forEach((p)=>fs.rmSync(p,{recursive:true,force:true}))"
+pnpm create next-app@latest apps/web --ts --tailwind --eslint --app --use-pnpm --skip-install --yes
+pnpm create hono@latest apps/api --template nodejs --pm pnpm
+pnpm create playwright@latest apps/web-e2e --lang=TypeScript --quiet --no-examples --no-browsers
+pnpm install
+pnpm exec husky init
 ```
 
-## What's inside?
+Note: in this Codex environment the Sentry wizard itself was blocked by a non-interactive TTY requirement, so the repo includes the equivalent Next.js Sentry placeholder files manually.
 
-This Turborepo includes the following packages/apps:
+## Workspace Layout
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```text
+apps/
+  api/        Hono API with services, metrics, and structured error handling
+  web/        Next.js App Router frontend
+  web-e2e/    Playwright smoke-test placeholder
+packages/
+  config/         Zod-based env loaders
+  db/             Drizzle schema, migrations, repositories
+  eslint-config/  Shared flat ESLint configs
+  logger/         Reusable Pino setup with Loki shipping
+  observability/  OpenTelemetry bootstrap and trace helpers
+  shared/         Shared DTOs, response envelopes, constants
+  typescript-config/ Shared TS presets
+  ui/             Shared UI primitives
+infra/
+  observability/  Grafana, Loki, Tempo, Prometheus, OTel Collector configs
 ```
 
-Without global `turbo`, use your package manager:
+## Core Scripts
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+pnpm format
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm db:generate
+pnpm db:migrate
+pnpm db:studio
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Local Development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+1. Copy `.env.example` to `.env` and adjust values if needed.
+2. Start infrastructure:
 
-```sh
-turbo build --filter=docs
-```
+   ```bash
+   docker compose up -d
+   ```
 
-Without global `turbo`:
+3. Generate the initial migration if you want to refresh it:
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+   ```bash
+   pnpm db:generate
+   ```
 
-### Develop
+4. Run the apps:
 
-To develop all apps and packages, run the following command:
+   ```bash
+   pnpm dev
+   ```
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+5. Open:
+   - Web: `http://localhost:3000`
+   - API: `http://localhost:3001/api/v1/health`
+   - Grafana: `http://localhost:3002`
+   - Prometheus: `http://localhost:9090`
 
-```sh
-cd my-turborepo
-turbo dev
-```
+## Architecture Notes
 
-Without global `turbo`, use your package manager:
+- `apps/api` exposes versioned routes under `/api/v1` plus `/metrics`.
+- Shared Zod schemas and response envelopes live in `@acme/shared`.
+- Repositories live in `@acme/db`; route handlers delegate to services instead of touching persistence directly.
+- `@acme/logger` emits pretty local logs and can push structured logs straight to Loki.
+- `@acme/observability` exports Node OTel bootstrapping and request span helpers.
+- Frontend pages use a typed API client instead of importing route handlers or server internals.
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+## Observability Flow
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+- API traces: `apps/api` -> OTel Collector -> Tempo
+- API metrics: `apps/api:/metrics` -> Prometheus -> Grafana
+- API logs: `@acme/logger` -> Loki -> Grafana
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+The Grafana datasources and an overview dashboard are provisioned automatically from `infra/observability/grafana/provisioning`.
 
-```sh
-turbo dev --filter=web
-```
+## Testing
 
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- `packages/shared`: sample contract parsing test
+- `packages/config`: env validation tests
+- `packages/logger`: logger binding serialization test
+- `apps/api`: route-level integration tests using `app.request()`
+- `apps/web-e2e`: Playwright smoke-test placeholder

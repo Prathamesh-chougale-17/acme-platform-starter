@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:17.4-alpine
+    container_name: acme-postgres
+    environment:
+      POSTGRES_DB: acme_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d acme_platform']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: acme-loki
+    command: ['-config.file=/etc/loki/config.yml']
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./infra/observability/loki-config.yml:/etc/loki/config.yml:ro
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: acme-tempo
+    command: ['-config.file=/etc/tempo.yaml']
+    ports:
+      - '3200:3200'
+    volumes:
+      - ./infra/observability/tempo.yaml:/etc/tempo.yaml:ro
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.126.0
+    container_name: acme-otel-collector
+    command: ['--config=/etc/otelcol-contrib/config.yaml']
+    depends_on:
+      - tempo
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+      - '8889:8889'
+    volumes:
+      - ./infra/observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: acme-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-remote-write-receiver'
+    depends_on:
+      - otel-collector
+    ports:
+      - '9090:9090'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: acme-grafana
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - '3002:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+
+volumes:
+  postgres-data:
+  grafana-data:

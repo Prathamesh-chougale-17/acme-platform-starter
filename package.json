@@ -3,18 +3,54 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "format": "pnpm exec prettier --write .",
+    "format:check": "pnpm exec prettier --check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test --filter=!@acme/web-e2e",
+    "test:e2e": "pnpm --filter @acme/web-e2e run test:e2e",
+    "db:generate": "pnpm exec dotenv -e .env -- drizzle-kit generate --config=packages/db/drizzle.config.ts",
+    "db:migrate": "pnpm exec dotenv -e .env -- drizzle-kit migrate --config=packages/db/drizzle.config.ts",
+    "db:studio": "pnpm exec dotenv -e .env -- drizzle-kit studio --config=packages/db/drizzle.config.ts",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@next/eslint-plugin-next": "16.2.3",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.4",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-turbo": "^2.9.6",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.7.4",
+    "tsup": "^8.5.1",
     "turbo": "^2.9.6",
-    "typescript": "5.9.2"
+    "tsx": "^4.21.0",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.58.1",
+    "vitest": "^4.1.4"
   },
-  "packageManager": "pnpm@9.0.0",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "pnpm exec eslint --fix"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "pnpm exec prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@10.17.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.0.0"
   }
 }

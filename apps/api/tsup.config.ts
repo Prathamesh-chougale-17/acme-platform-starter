@@ -1,0 +1,13 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['esm'],
+  sourcemap: true,
+  clean: true,
+  target: 'node22',
+  outDir: 'dist',
+  bundle: true,
+  noExternal: [/^@acme\//],
+  external: ['hono', '@hono/node-server', '@hono/zod-validator', '@sentry/node', 'prom-client'],
+});

@@ -1,102 +1,88 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
+import type { Route } from 'next';
+import Link from 'next/link';
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
+import { Badge, Button, Card, CardDescription, CardTitle } from '@acme/ui';
 
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
+import { publicEnv } from '@/lib/env';
 
+const platformPillars: Array<{ title: string; description: string; href: Route }> = [
+  {
+    title: 'Typed frontend',
+    description:
+      'Next.js 16 App Router with shared contracts, ergonomic data access, and Sentry-ready boundaries.',
+    href: '/health',
+  },
+  {
+    title: 'Transport-safe API',
+    description:
+      'Hono routes stay thin while services and repositories handle validation, persistence, and observability.',
+    href: '/users',
+  },
+  {
+    title: 'Local platform ops',
+    description:
+      'Postgres, Prometheus, Loki, Tempo, Grafana, and an OTel Collector ship together via Docker Compose.',
+    href: '/health',
+  },
+];
+
+export default function HomePage() {
   return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
+    <div className="space-y-10">
+      <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+        <Card className="space-y-6 overflow-hidden">
+          <Badge>Production Starter</Badge>
+          <div className="space-y-4">
+            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white md:text-6xl">
+              Build SaaS-grade platforms without rebuilding the foundation every sprint.
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-slate-300">
+              Acme Platform ships the opinionated baseline: shared DTOs, observability plumbing,
+              database access patterns, and a frontend shell that is ready for real feature work.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/health">
+              <Button>Open health dashboard</Button>
+            </Link>
+            <Link href="/users">
+              <Button variant="secondary">Open users workspace</Button>
+            </Link>
+          </div>
+        </Card>
+        <Card className="space-y-5">
+          <CardTitle>Environment snapshot</CardTitle>
+          <CardDescription>
+            Safe values surfaced from validated frontend configuration.
+          </CardDescription>
+          <dl className="space-y-4 text-sm text-slate-200">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">App env</dt>
+              <dd className="mt-2 text-lg font-medium text-white">
+                {publicEnv.NEXT_PUBLIC_APP_ENV}
+              </dd>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">API base URL</dt>
+              <dd className="mt-2 break-all font-mono text-sm text-cyan-300">
+                {publicEnv.NEXT_PUBLIC_API_BASE_URL}
+              </dd>
+            </div>
+          </dl>
+        </Card>
+      </section>
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.dev/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.dev?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.dev →
-        </a>
-      </footer>
+      <section className="grid gap-4 md:grid-cols-3">
+        {platformPillars.map((pillar) => (
+          <Card key={pillar.title} className="space-y-4">
+            <CardTitle>{pillar.title}</CardTitle>
+            <CardDescription>{pillar.description}</CardDescription>
+            <Link href={pillar.href} className="text-sm font-semibold text-cyan-300">
+              Explore →
+            </Link>
+          </Card>
+        ))}
+      </section>
     </div>
   );
 }
