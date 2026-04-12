@@ -4,20 +4,6 @@ Production-grade full-stack monorepo starter for modern SaaS and internal platfo
 
 This repository combines a Next.js frontend, a Hono API, shared TypeScript packages, Drizzle ORM, PostgreSQL, and a local observability stack built on Grafana, Loki, Tempo, Prometheus, and OpenTelemetry.
 
-## Recommended Repository Name
-
-If you want the repository name to communicate that this is a reusable foundation and not only one specific product, the best name is:
-
-`acme-platform-starter`
-
-Good alternatives depending on intent:
-
-- `acme-platform` if this is the actual product monorepo
-- `acme-platform-foundation` if this is an internal engineering baseline
-- `acme-saas-starter` if you want the template positioning to be more explicit
-
-My recommendation is to keep the package and workspace scope as `@acme/*`, but name the Git repository `acme-platform-starter`.
-
 ## What This Repo Includes
 
 - Turborepo monorepo orchestration with pnpm
