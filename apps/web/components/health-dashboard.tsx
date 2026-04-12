@@ -1,14 +1,30 @@
 'use client';
 
-import { Badge, Button, Card, CardDescription, CardTitle } from '@acme/ui';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@acme/ui';
 import type { HealthDto } from '@acme/shared';
 
 import { useHealthQuery } from '@/lib/queries';
 
-const statusClasses: Record<HealthDto['checks']['api']['status'], string> = {
-  up: 'bg-emerald-400',
-  degraded: 'bg-amber-400',
-  down: 'bg-rose-400',
+const statusVariants: Record<
+  HealthDto['checks']['api']['status'],
+  'default' | 'secondary' | 'destructive'
+> = {
+  up: 'default',
+  degraded: 'secondary',
+  down: 'destructive',
 };
 
 const getErrorMessage = (error: unknown) =>
@@ -24,6 +40,13 @@ export function HealthDashboard({
   const healthQuery = useHealthQuery();
   const health = healthQuery.data;
   const hasBlockingError = healthQuery.isError && !health;
+  const requestState = healthQuery.isPending
+    ? 'Loading latest health payload'
+    : hasBlockingError
+      ? 'Failed to load payload'
+      : healthQuery.isFetching
+        ? 'Refreshing payload'
+        : 'Live data loaded';
 
   return (
     <div className="space-y-8">
@@ -44,56 +67,70 @@ export function HealthDashboard({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="space-y-3">
-          <CardTitle>Frontend env</CardTitle>
-          <CardDescription>{environment}</CardDescription>
+        <Card>
+          <CardHeader>
+            <CardTitle>Frontend env</CardTitle>
+            <CardDescription>{environment}</CardDescription>
+          </CardHeader>
         </Card>
-        <Card className="space-y-3">
-          <CardTitle>Backend base URL</CardTitle>
-          <CardDescription className="font-mono text-cyan-300">{apiBaseUrl}</CardDescription>
+        <Card>
+          <CardHeader>
+            <CardTitle>Backend base URL</CardTitle>
+            <CardDescription className="font-mono text-primary">{apiBaseUrl}</CardDescription>
+          </CardHeader>
         </Card>
-        <Card className="space-y-3">
-          <CardTitle>Request state</CardTitle>
-          <CardDescription>
-            {healthQuery.isPending
-              ? 'Loading latest health payload'
-              : hasBlockingError
-                ? 'Failed to load payload'
-                : healthQuery.isFetching
-                  ? 'Refreshing payload'
-                  : 'Live data loaded'}
-          </CardDescription>
+        <Card>
+          <CardHeader>
+            <CardTitle>Request state</CardTitle>
+            <CardDescription>{requestState}</CardDescription>
+          </CardHeader>
         </Card>
       </div>
 
       {healthQuery.isPending ? (
-        <Card className="h-60 animate-pulse bg-white/5" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index}>
+              <CardHeader>
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : hasBlockingError ? (
-        <Card className="space-y-3 border-rose-400/30">
-          <CardTitle>Backend unavailable</CardTitle>
-          <CardDescription>{getErrorMessage(healthQuery.error)}</CardDescription>
-        </Card>
+        <Alert variant="destructive">
+          <AlertTitle>Backend unavailable</AlertTitle>
+          <AlertDescription>{getErrorMessage(healthQuery.error)}</AlertDescription>
+        </Alert>
       ) : health ? (
         <div className="grid gap-4 md:grid-cols-3">
           {Object.entries(health.checks).map(([key, value]) => (
-            <Card key={key} className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
+            <Card key={key}>
+              <CardHeader>
                 <CardTitle className="capitalize">{key}</CardTitle>
-                <span
-                  className={`inline-flex size-3 rounded-full ${statusClasses[value.status]}`}
-                />
-              </div>
-              <CardDescription>{value.detail}</CardDescription>
+                <CardAction>
+                  <Badge variant={statusVariants[value.status]}>{value.status}</Badge>
+                </CardAction>
+                <CardDescription>{value.detail}</CardDescription>
+              </CardHeader>
             </Card>
           ))}
-          <Card className="space-y-3 md:col-span-3">
-            <CardTitle>Backend payload</CardTitle>
-            <CardDescription>
-              {health.service} • version {health.version} • uptime {health.uptimeSeconds}s
-            </CardDescription>
-            <pre className="overflow-auto rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-xs text-slate-200">
-              {JSON.stringify(health, null, 2)}
-            </pre>
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle>Backend payload</CardTitle>
+              <CardDescription>
+                {health.service} • version {health.version} • uptime {health.uptimeSeconds}s
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="overflow-auto rounded-2xl border border-border/80 bg-background/35 p-4 text-xs text-foreground">
+                {JSON.stringify(health, null, 2)}
+              </pre>
+            </CardContent>
           </Card>
         </div>
       ) : null}

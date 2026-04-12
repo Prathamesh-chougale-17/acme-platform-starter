@@ -1,7 +1,17 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 
-import { Badge, Button, Card, CardDescription, CardTitle } from '@acme/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Separator,
+} from '@acme/ui';
 
 import { publicEnv } from '@/lib/env';
 
@@ -30,56 +40,65 @@ export default function HomePage() {
   return (
     <div className="space-y-10">
       <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-        <Card className="space-y-6 overflow-hidden">
-          <Badge>Production Starter</Badge>
-          <div className="space-y-4">
-            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white md:text-6xl">
+        <Card className="overflow-hidden">
+          <CardHeader className="gap-5">
+            <Badge>Production Starter</Badge>
+            <CardTitle className="max-w-3xl text-5xl tracking-tight text-white md:text-6xl">
               Build SaaS-grade platforms without rebuilding the foundation every sprint.
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-slate-300">
+            </CardTitle>
+            <CardDescription className="max-w-2xl text-lg leading-8 text-muted-foreground">
               Acme Platform ships the opinionated baseline: shared DTOs, observability plumbing,
               database access patterns, and a frontend shell that is ready for real feature work.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex flex-wrap gap-3">
             <Link href="/health">
               <Button>Open health dashboard</Button>
             </Link>
             <Link href="/users">
               <Button variant="secondary">Open users workspace</Button>
             </Link>
-          </div>
+          </CardFooter>
         </Card>
-        <Card className="space-y-5">
-          <CardTitle>Environment snapshot</CardTitle>
-          <CardDescription>
-            Safe values surfaced from validated frontend configuration.
-          </CardDescription>
-          <dl className="space-y-4 text-sm text-slate-200">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">App env</dt>
+        <Card>
+          <CardHeader>
+            <CardTitle>Environment snapshot</CardTitle>
+            <CardDescription>
+              Safe values surfaced from validated frontend configuration.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 text-sm text-foreground">
+            <div className="rounded-2xl border border-border/80 bg-background/35 p-4">
+              <dt className="text-xs uppercase tracking-[0.2em] text-muted-foreground">App env</dt>
               <dd className="mt-2 text-lg font-medium text-white">
                 {publicEnv.NEXT_PUBLIC_APP_ENV}
               </dd>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">API base URL</dt>
-              <dd className="mt-2 break-all font-mono text-sm text-cyan-300">
+            <Separator />
+            <div className="rounded-2xl border border-border/80 bg-background/35 p-4">
+              <dt className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                API base URL
+              </dt>
+              <dd className="mt-2 break-all font-mono text-sm text-primary">
                 {publicEnv.NEXT_PUBLIC_API_BASE_URL}
               </dd>
             </div>
-          </dl>
+          </CardContent>
         </Card>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         {platformPillars.map((pillar) => (
-          <Card key={pillar.title} className="space-y-4">
-            <CardTitle>{pillar.title}</CardTitle>
-            <CardDescription>{pillar.description}</CardDescription>
-            <Link href={pillar.href} className="text-sm font-semibold text-cyan-300">
-              Explore →
-            </Link>
+          <Card key={pillar.title}>
+            <CardHeader>
+              <CardTitle>{pillar.title}</CardTitle>
+              <CardDescription>{pillar.description}</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Link href={pillar.href} className="text-sm font-semibold text-primary">
+                Explore →
+              </Link>
+            </CardFooter>
           </Card>
         ))}
       </section>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { APP_NAME } from '@acme/shared';
 import { Button } from '@acme/ui';
+import '@acme/ui/globals.css';
 
 import { SignOutButton } from '@/components/sign-out-button';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -41,7 +42,7 @@ export default async function RootLayout({
   const currentUser = await getCurrentUser();
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
         <QueryProvider>
           <div className="app-shell">
