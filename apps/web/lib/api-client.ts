@@ -27,27 +27,67 @@ const env = loadWebEnv({
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
 });
 
-const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> => {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
-    cache: 'no-store',
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-  });
+const REQUEST_TIMEOUT_MS = 8_000;
 
-  const payload = (await response.json()) as ApiResponse<unknown>;
+const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
+  const text = await response.text();
 
-  if (!response.ok || !payload.success) {
-    throw new ApiClientError(
-      payload.success ? 'Unknown API failure' : payload.error.message,
-      response.status,
-      payload.success ? undefined : payload.error.code,
-    );
+  if (!text.trim()) {
+    return undefined;
   }
 
-  return schema.parse(payload.data);
+  try {
+    return JSON.parse(text) as ApiResponse<unknown>;
+  } catch {
+    return undefined;
+  }
+};
+
+const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
+      cache: 'no-store',
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init.headers ?? {}),
+      },
+      signal: controller.signal,
+    });
+
+    const payload = await parseApiResponse(response);
+
+    if (!response.ok) {
+      throw new ApiClientError(
+        payload?.success === false
+          ? payload.error.message
+          : `Request failed with status ${response.status}`,
+        response.status,
+        payload?.success === false ? payload.error.code : undefined,
+      );
+    }
+
+    if (!payload?.success) {
+      throw new ApiClientError('API returned an invalid response payload', response.status);
+    }
+
+    return schema.parse(payload.data);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiClientError(
+        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Confirm the API is running at ${env.NEXT_PUBLIC_API_BASE_URL}.`,
+        504,
+        'REQUEST_TIMEOUT',
+      );
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 };
 
 export const apiClient = {

@@ -1,17 +1,18 @@
 'use client';
 
-import { useEffect, useEffectEvent, useState } from 'react';
-
 import { Badge, Button, Card, CardDescription, CardTitle } from '@acme/ui';
 import type { HealthDto } from '@acme/shared';
 
-import { apiClient } from '@/lib/api-client';
+import { useHealthQuery } from '@/lib/queries';
 
 const statusClasses: Record<HealthDto['checks']['api']['status'], string> = {
   up: 'bg-emerald-400',
   degraded: 'bg-amber-400',
   down: 'bg-rose-400',
 };
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Unable to load backend health';
 
 export function HealthDashboard({
   environment,
@@ -20,27 +21,9 @@ export function HealthDashboard({
   environment: string;
   apiBaseUrl: string;
 }) {
-  const [health, setHealth] = useState<HealthDto | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const refreshHealth = useEffectEvent(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const next = await apiClient.getHealth();
-      setHealth(next);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to load backend health');
-    } finally {
-      setIsLoading(false);
-    }
-  });
-
-  useEffect(() => {
-    void refreshHealth();
-  }, [refreshHealth]);
+  const healthQuery = useHealthQuery();
+  const health = healthQuery.data;
+  const hasBlockingError = healthQuery.isError && !health;
 
   return (
     <div className="space-y-8">
@@ -55,8 +38,8 @@ export function HealthDashboard({
             observability is ready before feature work starts.
           </p>
         </div>
-        <Button variant="secondary" onClick={() => void refreshHealth()}>
-          Refresh
+        <Button variant="secondary" onClick={() => void healthQuery.refetch()}>
+          {healthQuery.isFetching && !healthQuery.isPending ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
 
@@ -72,21 +55,23 @@ export function HealthDashboard({
         <Card className="space-y-3">
           <CardTitle>Request state</CardTitle>
           <CardDescription>
-            {isLoading
+            {healthQuery.isPending
               ? 'Loading latest health payload'
-              : error
+              : hasBlockingError
                 ? 'Failed to load payload'
-                : 'Live data loaded'}
+                : healthQuery.isFetching
+                  ? 'Refreshing payload'
+                  : 'Live data loaded'}
           </CardDescription>
         </Card>
       </div>
 
-      {isLoading ? (
+      {healthQuery.isPending ? (
         <Card className="h-60 animate-pulse bg-white/5" />
-      ) : error ? (
+      ) : hasBlockingError ? (
         <Card className="space-y-3 border-rose-400/30">
           <CardTitle>Backend unavailable</CardTitle>
-          <CardDescription>{error}</CardDescription>
+          <CardDescription>{getErrorMessage(healthQuery.error)}</CardDescription>
         </Card>
       ) : health ? (
         <div className="grid gap-4 md:grid-cols-3">

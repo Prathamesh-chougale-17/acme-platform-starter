@@ -4,6 +4,8 @@ import Link from 'next/link';
 
 import { APP_NAME } from '@acme/shared';
 
+import { QueryProvider } from '@/components/providers/query-provider';
+
 import './globals.css';
 
 const displayFont = Space_Grotesk({
@@ -36,32 +38,34 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
-        <div className="app-shell">
-          <div className="ambient ambient-one" />
-          <div className="ambient ambient-two" />
-          <header className="border-b border-white/10">
-            <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-              <Link href="/" className="flex items-center gap-3 text-sm font-semibold text-white">
-                <span className="flex size-10 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950">
-                  AC
-                </span>
-                <span>{APP_NAME}</span>
-              </Link>
-              <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </header>
-          <main className="mx-auto w-full max-w-6xl px-6 py-12">{children}</main>
-        </div>
+        <QueryProvider>
+          <div className="app-shell">
+            <div className="ambient ambient-one" />
+            <div className="ambient ambient-two" />
+            <header className="border-b border-white/10">
+              <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+                <Link href="/" className="flex items-center gap-3 text-sm font-semibold text-white">
+                  <span className="flex size-10 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950">
+                    AC
+                  </span>
+                  <span>{APP_NAME}</span>
+                </Link>
+                <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-full px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </header>
+            <main className="mx-auto w-full max-w-6xl px-6 py-12">{children}</main>
+          </div>
+        </QueryProvider>
       </body>
     </html>
   );

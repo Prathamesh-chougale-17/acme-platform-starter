@@ -1,60 +1,42 @@
 'use client';
 
-import { startTransition, useEffect, useEffectEvent, useState } from 'react';
+import { useState } from 'react';
 
 import { Badge, Button, Card, CardDescription, CardTitle, Input } from '@acme/ui';
-import type { CreateUserInput, UserDto } from '@acme/shared';
+import type { CreateUserInput } from '@acme/shared';
 
-import { apiClient } from '@/lib/api-client';
+import { useCreateUserMutation, useUsersQuery } from '@/lib/queries';
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Unable to complete the request';
 
 export function UsersWorkspace() {
-  const [users, setUsers] = useState<UserDto[]>([]);
   const [form, setForm] = useState<CreateUserInput>({
     name: '',
     email: '',
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const usersQuery = useUsersQuery();
+  const createUserMutation = useCreateUserMutation();
 
-  const loadUsers = useEffectEvent(async () => {
-    setIsLoading(true);
-    setError(null);
+  const users = usersQuery.data ?? [];
+  const errorMessage = createUserMutation.isError
+    ? getErrorMessage(createUserMutation.error)
+    : usersQuery.isError
+      ? getErrorMessage(usersQuery.error)
+      : null;
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setNotice(null);
 
     try {
-      setUsers(await apiClient.getUsers());
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to fetch users');
-    } finally {
-      setIsLoading(false);
+      const created = await createUserMutation.mutateAsync(form);
+      setForm({ name: '', email: '' });
+      setNotice(`Created ${created.name}`);
+    } catch {
+      // Mutation state drives the error message UI.
     }
-  });
-
-  useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setNotice(null);
-    setError(null);
-
-    startTransition(() => {
-      void (async () => {
-        try {
-          const created = await apiClient.createUser(form);
-          setUsers((current) => [created, ...current]);
-          setForm({ name: '', email: '' });
-          setNotice(`Created ${created.name}`);
-        } catch (nextError) {
-          setError(nextError instanceof Error ? nextError.message : 'Unable to create user');
-        } finally {
-          setIsSubmitting(false);
-        }
-      })();
-    });
   };
 
   return (
@@ -88,12 +70,12 @@ export function UsersWorkspace() {
                 setForm((current) => ({ ...current, email: event.target.value }))
               }
             />
-            <Button className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating user...' : 'Create user'}
+            <Button className="w-full" disabled={createUserMutation.isPending}>
+              {createUserMutation.isPending ? 'Creating user...' : 'Create user'}
             </Button>
           </form>
           {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
-          {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+          {errorMessage ? <p className="text-sm text-rose-300">{errorMessage}</p> : null}
         </Card>
 
         <Card className="space-y-4">
@@ -102,16 +84,18 @@ export function UsersWorkspace() {
               <CardTitle>Current users</CardTitle>
               <CardDescription>Loaded from the backend service layer.</CardDescription>
             </div>
-            <Button variant="secondary" onClick={() => void loadUsers()}>
-              Refresh
+            <Button variant="secondary" onClick={() => void usersQuery.refetch()}>
+              {usersQuery.isFetching && !usersQuery.isPending ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
-          {isLoading ? (
+          {usersQuery.isPending ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="h-16 animate-pulse rounded-2xl bg-white/5" />
               ))}
             </div>
+          ) : usersQuery.isError ? (
+            <p className="text-sm text-rose-300">{getErrorMessage(usersQuery.error)}</p>
           ) : users.length === 0 ? (
             <p className="text-sm text-slate-300">
               No users yet. Create the first record from the form.
