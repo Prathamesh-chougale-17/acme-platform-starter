@@ -1,7 +1,4 @@
 {
   "extends": "../../packages/typescript-config/node.json",
-  "compilerOptions": {
-    "baseUrl": "."
-  },
   "include": ["src/**/*.ts", "tsup.config.ts"]
 }
