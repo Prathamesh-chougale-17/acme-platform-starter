@@ -1,6 +1,12 @@
 import { loadApiEnv } from '@acme/config';
 import type { UsersRepository } from '@acme/db';
-import type { ApiResponse, AuthRole, CurrentUserDto, HealthDto, UsersWorkspaceDto } from '@acme/shared';
+import type {
+  ApiResponse,
+  AuthRole,
+  CurrentUserDto,
+  HealthDto,
+  UsersWorkspaceDto,
+} from '@acme/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authUser = {

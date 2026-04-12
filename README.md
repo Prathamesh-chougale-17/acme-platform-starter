@@ -420,6 +420,55 @@ pnpm db:migrate
 pnpm db:studio
 ```
 
+## Continuous Integration
+
+GitHub Actions is the default CI provider for this repo.
+
+### Workflow
+
+The main workflow is:
+
+- `.github/workflows/ci.yml`
+
+It runs on:
+
+- pull requests targeting `main`
+- pushes to `main`
+- manual `workflow_dispatch`
+
+### Required PR Checks
+
+These jobs are intended to be required in branch protection:
+
+- `format-check`
+- `lint`
+- `typecheck`
+- `test`
+- `build`
+- `docker-validate`
+- `e2e-smoke`
+
+### Main-Only Verification
+
+The heavier `db-verify` job runs on:
+
+- pushes to `main`
+- manual workflow dispatches
+
+It verifies:
+
+- Better Auth generated schema stays committed
+- Drizzle SQL artifacts stay committed
+- migrations apply on a fresh PostgreSQL service
+
+### CI Environment Strategy
+
+CI does not depend on committed local `.env` files or production secrets.
+
+- `.github/actions/write-ci-env` generates deterministic `apps/api/.env` and `apps/web/.env`
+- pull request jobs use synthetic auth, mailer, and app env values
+- only `db-verify` depends on a live PostgreSQL service container
+
 ### Useful Filtered Commands
 
 Run only the API:
@@ -813,7 +862,6 @@ This starter is ready for the next layer of platform work:
 - background jobs
 - webhooks
 - feature flags
-- CI pipelines
 - preview deployments
 - production secrets management
 - managed database environments

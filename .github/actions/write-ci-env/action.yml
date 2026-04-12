@@ -1,0 +1,67 @@
+name: Write CI Env
+description: Generate deterministic environment files for CI jobs.
+
+inputs:
+  database-url:
+    description: Database URL to use in generated API and root env files.
+    required: false
+    default: postgres://postgres:postgres@localhost:5432/acme_platform
+  app-origin:
+    description: Browser origin used by Better Auth and API CORS in CI.
+    required: false
+    default: http://127.0.0.1:3000
+  api-base-url:
+    description: API base URL exposed to the web app in CI.
+    required: false
+    default: http://localhost:3001
+  better-auth-secret:
+    description: Synthetic Better Auth secret for CI.
+    required: false
+    default: ci-better-auth-secret-123456789012345
+  auth-from-email:
+    description: Sender identity used in CI auth flows.
+    required: false
+    default: Acme Platform <auth@acme-platform.local>
+
+runs:
+  using: composite
+  steps:
+    - name: Write root env
+      shell: bash
+      run: |
+        cat > .env <<EOF
+        DATABASE_URL=${{ inputs.database-url }}
+        EOF
+
+    - name: Write API env
+      shell: bash
+      run: |
+        cat > apps/api/.env <<EOF
+        PORT=3001
+        DATABASE_URL=${{ inputs.database-url }}
+        APP_ORIGIN=${{ inputs.app-origin }}
+        API_CORS_ORIGIN=${{ inputs.app-origin }}
+        BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}
+        BETTER_AUTH_URL=${{ inputs.app-origin }}
+        AUTH_FROM_EMAIL=${{ inputs.auth-from-email }}
+        RESEND_API_KEY=
+        API_SERVICE_NAME=acme-api
+        API_SENTRY_DSN=
+        API_LOG_LEVEL=warn
+        API_LOG_TO_LOKI=false
+        OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+        LOKI_URL=http://localhost:3100
+        EOF
+
+    - name: Write web env
+      shell: bash
+      run: |
+        cat > apps/web/.env <<EOF
+        NEXT_PUBLIC_APP_ENV=development
+        NEXT_PUBLIC_API_BASE_URL=${{ inputs.api-base-url }}
+        NEXT_PUBLIC_SENTRY_DSN=
+        BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}
+        BETTER_AUTH_URL=${{ inputs.app-origin }}
+        AUTH_FROM_EMAIL=${{ inputs.auth-from-email }}
+        RESEND_API_KEY=
+        EOF
