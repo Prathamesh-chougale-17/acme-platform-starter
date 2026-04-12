@@ -1,5 +1,6 @@
 server:
   http_listen_port: 3200
+  grpc_listen_port: 9095
 
 distributor:
   receivers:
@@ -22,10 +23,29 @@ compactor:
 storage:
   trace:
     backend: local
+    wal:
+      path: /tmp/tempo/wal
     local:
       path: /tmp/tempo/traces
 
 metrics_generator:
+  ring:
+    kvstore:
+      store: inmemory
+    instance_addr: 127.0.0.1
+    instance_port: 9095
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write_flush_deadline: 1m
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+  traces_storage:
+    path: /tmp/tempo/generator/traces
+  processor:
+    local_blocks:
+      filter_server_spans: false
+      flush_to_storage: true
   registry:
     external_labels:
       source: tempo
@@ -34,4 +54,4 @@ metrics_generator:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, span-metrics]
+      processors: [service-graphs, span-metrics, local-blocks]
