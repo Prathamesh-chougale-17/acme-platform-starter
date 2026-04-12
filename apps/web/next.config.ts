@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@acme/config', '@acme/shared', '@acme/ui'],
   typedRoutes: true,
   output: 'standalone',
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
 };
 
 export default withSentryConfig(nextConfig, {

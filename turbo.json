@@ -19,6 +19,10 @@
       "dependsOn": ["^test"],
       "outputs": ["coverage/**"]
     },
+    "test:e2e": {
+      "cache": false,
+      "env": ["CI", "PLAYWRIGHT_BASE_URL"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
