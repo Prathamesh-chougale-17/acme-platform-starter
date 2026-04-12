@@ -1,12 +1,14 @@
 import { loadWebEnv } from '@acme/config';
 import {
-  CreateUserInputSchema,
+  CreateInvitationInputSchema,
+  CurrentUserDtoSchema,
   HealthDtoSchema,
-  UserDtoSchema,
+  UsersWorkspaceDtoSchema,
   type ApiResponse,
-  type CreateUserInput,
+  type CreateInvitationInput,
+  type CurrentUserDto,
   type HealthDto,
-  type UserDto,
+  type UsersWorkspaceDto,
 } from '@acme/shared';
 import { z } from 'zod';
 
@@ -50,6 +52,7 @@ const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>)
   try {
     const response = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
       cache: 'no-store',
+      credentials: 'include',
       ...init,
       headers: {
         'Content-Type': 'application/json',
@@ -92,14 +95,18 @@ const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>)
 
 export const apiClient = {
   getHealth: () => request<HealthDto>('/api/v1/health', { method: 'GET' }, HealthDtoSchema),
-  getUsers: () => request<UserDto[]>('/api/v1/users', { method: 'GET' }, z.array(UserDtoSchema)),
-  createUser: (input: CreateUserInput) =>
-    request<UserDto>(
-      '/api/v1/users',
+  getMe: () => request<CurrentUserDto>('/api/v1/me', { method: 'GET' }, CurrentUserDtoSchema),
+  getUsersWorkspace: () =>
+    request<UsersWorkspaceDto>('/api/v1/users', { method: 'GET' }, UsersWorkspaceDtoSchema),
+  createInvitation: (input: CreateInvitationInput) =>
+    request(
+      '/api/v1/invitations',
       {
         method: 'POST',
-        body: JSON.stringify(CreateUserInputSchema.parse(input)),
+        body: JSON.stringify(CreateInvitationInputSchema.parse(input)),
       },
-      UserDtoSchema,
+      z.object({
+        invitationId: z.uuid(),
+      }),
     ),
 };

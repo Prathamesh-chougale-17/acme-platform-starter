@@ -2,7 +2,27 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "globalDependencies": [".env", ".env.*"],
-  "globalEnv": ["NEXT_RUNTIME", "NODE_ENV"],
+  "globalEnv": [
+    "NEXT_RUNTIME",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "AUTH_FROM_EMAIL",
+    "RESEND_API_KEY",
+    "APP_ORIGIN",
+    "API_CORS_ORIGIN",
+    "PORT",
+    "API_SERVICE_NAME",
+    "API_SENTRY_DSN",
+    "API_LOG_LEVEL",
+    "API_LOG_TO_LOKI",
+    "OTEL_EXPORTER_OTLP_ENDPOINT",
+    "LOKI_URL",
+    "NEXT_PUBLIC_APP_ENV",
+    "NEXT_PUBLIC_API_BASE_URL",
+    "NEXT_PUBLIC_SENTRY_DSN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -16,8 +36,7 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
-      "dependsOn": ["^test"],
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^test"]
     },
     "test:e2e": {
       "cache": false,
@@ -26,6 +45,9 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "auth:generate": {
+      "cache": false
     },
     "db:generate": {
       "cache": false

@@ -2,17 +2,19 @@
 
 Production-grade full-stack monorepo starter for modern SaaS and internal platforms.
 
-This repository combines a Next.js frontend, a Hono API, shared TypeScript packages, Drizzle ORM, PostgreSQL, and a local observability stack built on Grafana, Loki, Tempo, Prometheus, and OpenTelemetry.
+This repository combines a Next.js frontend, a Hono API, Better Auth, shared TypeScript packages, Drizzle ORM, PostgreSQL, and a local observability stack built on Grafana, Loki, Tempo, Prometheus, and OpenTelemetry.
 
 ## What This Repo Includes
 
 - Turborepo monorepo orchestration with pnpm
 - Next.js App Router frontend in `apps/web`
 - Hono Node.js API in `apps/api`
-- Shared packages for config, database, logger, contracts, observability, UI, ESLint, and TypeScript presets
+- Better Auth with database-backed sessions and organization-scoped RBAC
+- Shared packages for auth, config, database, logger, contracts, observability, UI, ESLint, and TypeScript presets
 - PostgreSQL with Drizzle schema and migration workflow
+- Resend-backed auth mailer with local capture fallback for development and tests
 - Vitest unit and integration testing
-- Playwright E2E placeholder
+- Playwright E2E smoke coverage
 - Husky and lint-staged for commit-time quality gates
 - Local observability stack with Grafana, Loki, Tempo, Prometheus, and OpenTelemetry Collector
 - Sentry placeholders for frontend and backend
@@ -36,20 +38,24 @@ This repository combines a Next.js frontend, a Hono API, shared TypeScript packa
 - React
 - Tailwind CSS
 - TanStack Query
+- Better Auth client
 - Zod
 
 ### Backend
 
 - Hono
+- Better Auth server APIs
 - Zod
 - Pino
 - Prometheus metrics
 - OpenTelemetry
 
-### Data
+### Data and Auth
 
 - PostgreSQL
 - Drizzle ORM
+- Better Auth
+- Resend
 
 ### Observability
 
@@ -64,8 +70,9 @@ This repository combines a Next.js frontend, a Hono API, shared TypeScript packa
 
 ### High-Level Design
 
-- `apps/web` is the presentation layer
-- `apps/api` is the HTTP transport layer
+- `apps/web` is the presentation layer and hosts the Better Auth route handler
+- `apps/api` is the Hono transport layer for application APIs
+- `packages/auth` owns Better Auth configuration, session helpers, RBAC helpers, and auth mail delivery
 - `packages/shared` contains transport-neutral contracts and response types
 - `packages/db` contains schema, migrations, client, and repositories
 - `packages/config` owns runtime env validation
@@ -79,10 +86,13 @@ This repository combines a Next.js frontend, a Hono API, shared TypeScript packa
 
 ```mermaid
 flowchart LR
-    Browser["Next.js Web App"] --> API["Hono API"]
+    Browser["Next.js Web App"] --> Auth["Better Auth route in apps/web"]
+    Browser --> API["Hono API"]
+    Auth --> DB["PostgreSQL"]
+    API --> AuthContext["packages/auth session resolution"]
     API --> Services["Service Layer"]
     Services --> Repos["Repository Layer"]
-    Repos --> DB["PostgreSQL"]
+    Repos --> DB
     API --> Metrics["/metrics"]
     API --> Logs["Pino Logger"]
     API --> Traces["OpenTelemetry"]
@@ -100,10 +110,11 @@ flowchart LR
 ```text
 apps/
   api/         Hono API service
-  web/         Next.js frontend
+  web/         Next.js frontend and Better Auth route handler
   web-e2e/     Playwright smoke-test placeholder
 
 packages/
+  auth/                Better Auth config, session helpers, RBAC, auth mailer
   config/              Zod-based env loaders
   db/                  Drizzle schema, migrations, repositories
   eslint-config/       Shared flat ESLint configuration
@@ -126,37 +137,66 @@ infra/
 
 ### Frontend
 
-- Landing page
-- Health dashboard page
-- Users page
-- Typed API client
+- public landing page
+- public auth pages:
+  - `/sign-in`
+  - `/sign-up`
+  - `/forgot-password`
+  - `/reset-password`
+  - `/accept-invite`
+- protected pages:
+  - `/users` for organization member management
+  - `/health` for operational dashboards
+- typed API client
 - TanStack Query data fetching and mutations
-- Shared UI package usage
-- Frontend env parsing
+- Better Auth client integration
+- shared UI package usage
+- frontend env parsing
 - Sentry placeholder wiring
 
 ### API
 
-- Versioned routes under `/api/v1`
-- `GET /health`
-- `GET /users`
-- `POST /users`
-- `GET /logs-test`
-- `GET /error-test`
-- `GET /metrics`
+- versioned routes under `/api/v1`
+- public routes:
+  - `GET /health`
+  - `GET /metrics`
+- protected routes:
+  - `GET /users`
+  - `GET /me`
+  - `POST /invitations`
+- guarded operational routes:
+  - `GET /logs-test`
+  - `GET /error-test`
 - request ID middleware
 - request logging middleware
 - latency measurement
 - structured error handling
-- CORS
+- credential-aware CORS
 - Prometheus metrics
+- authenticated request enrichment for logs, traces, and Sentry
+
+### Auth and RBAC
+
+- Better Auth email/password authentication
+- database-backed cookie sessions
+- organization plugin with default RBAC roles:
+  - `owner`
+  - `admin`
+  - `member`
+- sign-up creates the initial user account
+- the first organization can be created from the protected members workspace
+- owner and admin roles can invite members and admins
+- password reset flow
+- verification email wiring
+- invitation acceptance flow
 
 ### Data Layer
 
-- Drizzle schema
+- Drizzle schema generated from Better Auth configuration
 - migration generation
 - migration runner
-- users repository
+- organization members repository
+- pending invitations repository
 - PostgreSQL-ready local setup
 
 ## Prerequisites
@@ -191,7 +231,7 @@ pnpm exec husky init
 
 Note:
 
-- In this environment the official Sentry wizard could not complete because it requires an interactive TTY.
+- In this environment the official Next.js Sentry wizard could not complete because it requires an interactive TTY.
 - The equivalent placeholder integration files were added manually so the repo still has the correct wiring points.
 
 ## Getting Started
@@ -226,25 +266,60 @@ Copy-Item apps/api/.env.example apps/api/.env
 Copy-Item apps/web/.env.example apps/web/.env
 ```
 
-### 3. Start Local Infrastructure
+### 3. Set the Shared Auth Variables
+
+These values must match anywhere they are defined:
+
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `AUTH_FROM_EMAIL`
+- `RESEND_API_KEY`
+
+For local development:
+
+- keep `BETTER_AUTH_URL=http://localhost:3000`
+- use the same `BETTER_AUTH_SECRET` in both `apps/web/.env` and `apps/api/.env`
+- `RESEND_API_KEY` can be left empty in local development because the shared auth mailer captures emails in memory when Resend is not configured
+
+Generate a dev secret:
+
+```bash
+openssl rand -base64 32
+```
+
+Windows PowerShell:
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
+```
+
+### 4. Start Local Infrastructure
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Generate or Refresh Drizzle Migration Files
+### 5. Refresh Better Auth Generated Schema
+
+Run this whenever the Better Auth config or plugins change:
+
+```bash
+pnpm auth:generate
+```
+
+### 6. Generate or Refresh Drizzle Migration Files
 
 ```bash
 pnpm db:generate
 ```
 
-### 5. Apply Migrations
+### 7. Apply Migrations
 
 ```bash
 pnpm db:migrate
 ```
 
-### 6. Start the Monorepo in Development
+### 8. Start the Monorepo in Development
 
 ```bash
 pnpm dev
@@ -256,6 +331,7 @@ pnpm dev
 
 - Web: `http://localhost:3000`
 - API: `http://localhost:3001`
+- Better Auth health check: `http://localhost:3000/api/auth/ok`
 - API health: `http://localhost:3001/api/v1/health`
 - API metrics: `http://localhost:3001/metrics`
 
@@ -288,6 +364,7 @@ This file powers:
 - database tooling scripts
 - Drizzle commands
 - local logging and observability configuration
+- Better Auth session validation inside the Hono API
 
 Key variables:
 
@@ -295,6 +372,10 @@ Key variables:
 - `DATABASE_URL`
 - `APP_ORIGIN`
 - `API_CORS_ORIGIN`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `AUTH_FROM_EMAIL`
+- `RESEND_API_KEY`
 - `API_SERVICE_NAME`
 - `API_SENTRY_DSN`
 - `API_LOG_LEVEL`
@@ -304,11 +385,21 @@ Key variables:
 
 ### `apps/web/.env`
 
+This file powers:
+
+- Next.js runtime
+- Better Auth route handler mounted in `apps/web`
+- auth emails and redirect URLs
+
 Key variables:
 
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_APP_ENV`
 - `NEXT_PUBLIC_SENTRY_DSN`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `AUTH_FROM_EMAIL`
+- `RESEND_API_KEY`
 
 ## Scripts
 
@@ -323,6 +414,7 @@ pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm test:e2e
+pnpm auth:generate
 pnpm db:generate
 pnpm db:migrate
 pnpm db:studio
@@ -342,6 +434,12 @@ Run only the web app:
 pnpm --filter @acme/web dev
 ```
 
+Run only auth package tests:
+
+```bash
+pnpm --filter @acme/auth test
+```
+
 Run only API tests:
 
 ```bash
@@ -354,7 +452,60 @@ Run only web E2E tests:
 pnpm --filter @acme/web-e2e test:e2e
 ```
 
+## Authentication Workflow
+
+### Public Pages
+
+- `/`
+- `/sign-in`
+- `/sign-up`
+- `/forgot-password`
+- `/reset-password`
+- `/accept-invite`
+
+### Protected Pages
+
+- `/users`
+- `/health`
+
+Route protection is layered:
+
+- `proxy.ts` performs optimistic cookie-based redirects for faster navigation
+- protected server components validate the real session on the server
+- Hono routes re-validate session and role on every request
+
+### Sign-Up and Organization Bootstrap
+
+- sign-up creates the user account with Better Auth
+- invited sign-ups redirect into the invitation acceptance flow
+- non-invited users can create the first organization from `/users`
+- once an organization exists, `/users` becomes the organization members workspace
+
+### Invitation Flow
+
+1. owner or admin opens `/users`
+2. owner or admin submits the invite form
+3. Better Auth creates the invitation and the shared mailer sends an email
+4. in local development without Resend, the mailer falls back to in-memory capture so tests and local flows do not hard-fail
+5. the invited user opens `/accept-invite?invitationId=...`
+6. after sign-in or sign-up, the user accepts the invitation and joins the organization
+
+### Password Reset Flow
+
+1. open `/forgot-password`
+2. submit the account email
+3. Better Auth generates the reset link
+4. the shared mailer sends or captures the email
+5. open `/reset-password?token=...`
+6. submit the new password
+
 ## Database Workflow
+
+### Refresh Better Auth Schema
+
+```bash
+pnpm auth:generate
+```
 
 ### Generate a Migration
 
@@ -377,8 +528,10 @@ pnpm db:studio
 ### Database Notes
 
 - Docker Postgres is exposed on host port `5433`
-- Port `5433` is used intentionally to avoid conflicts with local PostgreSQL installs on `5432`
-- The root DB scripts use `apps/api/.env`
+- port `5433` is used intentionally to avoid conflicts with local PostgreSQL installs on `5432`
+- the root DB scripts use `apps/api/.env`
+- the Better Auth CLI generates schema into `packages/db/src/schema/auth.ts`
+- Drizzle SQL migrations remain the source of truth for applied schema changes
 
 ## API Design Conventions
 
@@ -389,10 +542,12 @@ pnpm db:studio
 - persistence stays inside `packages/db`
 - responses use shared envelope types from `@acme/shared`
 - logging and request metadata are applied centrally through middleware
+- authenticated routes enrich logs, traces, and Sentry tags with user and organization metadata
 
 ## Frontend Design Conventions
 
 - App Router everywhere
+- Better Auth route handling stays in `apps/web`
 - API access goes through typed client utilities and query hooks
 - TanStack Query owns server-state lifecycle
 - shared contracts come from `@acme/shared`
@@ -405,6 +560,7 @@ pnpm db:studio
 - API logs are emitted through `@acme/logger`
 - development logs are pretty-printed in the terminal
 - Loki shipping is opt-in through `API_LOG_TO_LOKI=true`
+- authenticated requests include `userId`, `organizationId`, and `role`
 - Grafana is the preferred log viewer
 
 ### Metrics
@@ -436,7 +592,8 @@ sum by (service) (rate(traces_spanmetrics_calls_total[5m]))
 - API spans are exported to the OTel Collector
 - the collector forwards traces into Tempo
 - Grafana Explore is the preferred trace UI
-- TraceQL metrics now work locally because Tempo metrics-generator has:
+- authenticated requests attach session-aware span attributes without logging secrets
+- TraceQL metrics work locally because Tempo metrics-generator has:
   - an active ring member
   - local-blocks enabled
   - durable generator WAL and traces paths
@@ -462,7 +619,7 @@ Useful filters:
 ```
 
 ```logql
-{service="acme-api", environment="development"} |= "/api/v1/users"
+{service="acme-api", environment="development"} |= "/api/v1/invitations"
 ```
 
 ### Trace Exploration
@@ -519,6 +676,7 @@ Sentry is wired as a safe placeholder.
 - DSN variable: `API_SENTRY_DSN`
 - SDK: `@sentry/node`
 - enabled only when a DSN exists and `NODE_ENV` is not `development`
+- authenticated requests enrich Sentry scope with user and organization tags
 
 ### Frontend
 
@@ -537,10 +695,11 @@ Recommended setup:
 ### Included
 
 - unit tests for shared packages
-- env validation tests
+- auth env validation tests
+- auth RBAC helper tests
 - logger tests
 - API integration tests using `app.request()`
-- Playwright smoke-test placeholder
+- Playwright smoke coverage
 
 ### Commands
 
@@ -573,6 +732,27 @@ docker compose up -d --force-recreate tempo otel-collector prometheus grafana lo
 ```
 
 ## Troubleshooting
+
+### `GET /api/auth/ok` fails
+
+Check:
+
+- `BETTER_AUTH_SECRET` is present and at least 32 characters
+- `BETTER_AUTH_URL=http://localhost:3000` in local development
+- both `apps/web/.env` and `apps/api/.env` contain matching Better Auth values
+
+### The API says `DATABASE_URL` is missing during `pnpm dev`
+
+The API process reads `apps/api/.env`. Make sure `DATABASE_URL` is present there before starting the Hono server.
+
+### Sign-in works but protected API calls fail
+
+Check:
+
+- `APP_ORIGIN=http://localhost:3000`
+- `API_CORS_ORIGIN=http://localhost:3000`
+- frontend requests include credentials
+- the browser actually has a Better Auth session cookie
 
 ### Grafana shows no API logs
 
@@ -629,15 +809,15 @@ pnpm --filter @acme/api dev
 
 This starter is ready for the next layer of platform work:
 
-- authentication
 - Redis
-- Kafka or event streaming
 - background jobs
+- webhooks
 - feature flags
 - CI pipelines
 - preview deployments
 - production secrets management
 - managed database environments
+- audit logging
 
 ## License
 

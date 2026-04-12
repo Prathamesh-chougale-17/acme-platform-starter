@@ -11,6 +11,9 @@ export type LoggerBindings = {
   traceId?: string;
   route?: string;
   method?: string;
+  userId?: string;
+  organizationId?: string;
+  role?: string;
   statusCode?: number;
   latency?: number;
 };
@@ -40,7 +43,11 @@ class LokiWriteStream extends Writable {
   private readonly batchingEnabled: boolean;
   private readonly intervalSeconds: number;
   private readonly baseLabels: Record<string, string>;
-  private readonly queue: Array<{ labels: Record<string, string>; line: string; timestamp: string }> = [];
+  private readonly queue: Array<{
+    labels: Record<string, string>;
+    line: string;
+    timestamp: string;
+  }> = [];
   private readonly timer?: NodeJS.Timeout;
   private flushPromise: Promise<void> | undefined;
 
@@ -96,7 +103,9 @@ class LokiWriteStream extends Writable {
       clearInterval(this.timer);
     }
 
-    void this.flush().then(() => callback()).catch((error) => callback(error as Error));
+    void this.flush()
+      .then(() => callback())
+      .catch((error) => callback(error as Error));
   }
 
   private enqueueChunk(rawChunk: string): void {

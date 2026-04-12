@@ -1,6 +1,7 @@
 export const queryKeys = {
   health: ['health'] as const,
+  me: ['me'] as const,
   users: {
-    all: ['users'] as const,
+    workspace: ['users', 'workspace'] as const,
   },
 };

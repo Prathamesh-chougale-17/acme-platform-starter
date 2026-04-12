@@ -1,3 +1,4 @@
+import type { ResolvedAuthContext } from '@acme/auth';
 import type { AppLogger } from '@acme/logger';
 import { getLoggerBindings } from '@acme/logger';
 import { withRequestSpan } from '@acme/observability';
@@ -11,6 +12,7 @@ export type AppVariables = {
   requestId: string;
   traceId?: string;
   logger: AppLogger;
+  auth: ResolvedAuthContext | null;
 };
 
 export type AppContext = {
@@ -29,6 +31,7 @@ export const requestContextMiddleware = ({
     const startedAt = performance.now();
 
     c.set('requestId', requestId);
+    c.set('auth', null);
     c.header('x-request-id', requestId);
 
     await withRequestSpan(

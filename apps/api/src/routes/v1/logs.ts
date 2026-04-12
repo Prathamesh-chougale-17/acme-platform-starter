@@ -2,11 +2,17 @@ import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 
 import { AppError, jsonSuccess } from '../../lib/http';
+import { requireRole } from '../../middleware/auth-context';
 import type { AppContext } from '../../middleware/request-context';
 import type { ApiEnv } from '@acme/config';
 
 export const createDiagnosticRoutes = ({ env }: { env: ApiEnv }) => {
   const router = new Hono<AppContext>();
+
+  if (env.NODE_ENV !== 'development') {
+    router.use('/logs-test', requireRole(['owner', 'admin']));
+    router.use('/error-test', requireRole(['owner', 'admin']));
+  }
 
   router.get('/logs-test', (c) => {
     const logger = c.get('logger');

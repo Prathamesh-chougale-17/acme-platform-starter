@@ -20,6 +20,13 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/acme_platform',
+      APP_ORIGIN: 'http://127.0.0.1:3000',
+      API_CORS_ORIGIN: 'http://127.0.0.1:3000',
+      BETTER_AUTH_SECRET: 'playwright-auth-secret-123456789012345',
+      BETTER_AUTH_URL: 'http://127.0.0.1:3000',
+      AUTH_FROM_EMAIL: 'Acme Platform <auth@acme-platform.local>',
+      RESEND_API_KEY: '',
       NEXT_PUBLIC_APP_ENV: 'development',
       NEXT_PUBLIC_API_BASE_URL: 'http://localhost:3001',
       NEXT_PUBLIC_SENTRY_DSN: '',

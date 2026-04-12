@@ -8,6 +8,7 @@ import { cors } from 'hono/cors';
 
 import { AppError, jsonError } from './lib/http';
 import { metricsContentType, renderMetrics } from './lib/metrics';
+import { hydrateAuthContext } from './middleware/auth-context';
 import { requestContextMiddleware, type AppContext } from './middleware/request-context';
 import { createV1Routes } from './routes/v1';
 import { HealthService } from './services/health-service';
@@ -56,13 +57,23 @@ export const createApp = (options: CreateAppOptions = {}) => {
   app.use(
     '*',
     cors({
-      origin: splitCorsOrigins(env.API_CORS_ORIGIN),
+      origin: (origin) => {
+        const allowedOrigins = splitCorsOrigins(env.API_CORS_ORIGIN);
+
+        if (!origin) {
+          return allowedOrigins[0] ?? env.APP_ORIGIN;
+        }
+
+        return allowedOrigins.includes(origin) ? origin : (allowedOrigins[0] ?? env.APP_ORIGIN);
+      },
       allowHeaders: ['Content-Type', 'x-request-id'],
       allowMethods: ['GET', 'POST', 'OPTIONS'],
       exposeHeaders: ['x-request-id'],
+      credentials: true,
     }),
   );
   app.use('*', requestContextMiddleware({ env, logger }));
+  app.use(`${API_V1_PREFIX}/*`, hydrateAuthContext());
 
   app.get(
     '/metrics',

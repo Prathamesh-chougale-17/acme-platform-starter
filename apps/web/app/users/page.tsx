@@ -1,5 +1,8 @@
+import { getRequiredUser } from '@/lib/auth';
 import { UsersWorkspace } from '@/components/users-workspace';
 
-export default function UsersPage() {
-  return <UsersWorkspace />;
+export default async function UsersPage() {
+  const viewer = await getRequiredUser('/users');
+
+  return <UsersWorkspace viewer={viewer} />;
 }
