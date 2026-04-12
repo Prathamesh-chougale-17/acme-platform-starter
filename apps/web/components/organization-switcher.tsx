@@ -7,11 +7,11 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Badge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from '@acme/ui';
 
 import { authClient } from '@/lib/auth-client';
@@ -51,61 +51,74 @@ export function OrganizationSwitcher({
 
   if (organizations.length <= 1) {
     return (
-      <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 md:flex">
-        <Badge variant="outline">Workspace</Badge>
-        <span className="max-w-52 truncate">{currentOrganizationName}</span>
+      <div className="hidden min-w-72 flex-col gap-1.5 md:flex">
+        <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+          Workspace
+        </span>
+        <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
+          <span className="block truncate">{currentOrganizationName}</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="hidden min-w-72 flex-col gap-2 md:flex">
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
-        <Badge variant="outline">Workspace</Badge>
-        <Select
-          value={activeOrganizationId}
-          onValueChange={(organizationId) => {
-            if (organizationId === activeOrganizationId) {
-              return;
-            }
+      <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+        Workspace
+      </span>
+      <Select
+        value={activeOrganizationId}
+        onValueChange={(organizationId) => {
+          if (organizationId === activeOrganizationId) {
+            return;
+          }
 
-            setError(null);
-            startTransition(async () => {
-              try {
-                const response = (await authClient.organization.setActive({
-                  organizationId,
-                })) as {
-                  error?: {
-                    message?: string;
-                  } | null;
-                };
+          setError(null);
+          startTransition(async () => {
+            try {
+              const response = (await authClient.organization.setActive({
+                organizationId,
+              })) as {
+                error?: {
+                  message?: string;
+                } | null;
+              };
 
-                if (response.error) {
-                  setError(response.error.message ?? 'Unable to switch organization.');
-                  return;
-                }
-
-                router.push(nextRoute as never);
-                router.refresh();
-              } catch (caughtError) {
-                setError(getErrorMessage(caughtError));
+              if (response.error) {
+                setError(response.error.message ?? 'Unable to switch organization.');
+                return;
               }
-            });
-          }}
-          disabled={isPending || organizationsQuery.isPending}
-        >
-          <SelectTrigger className="h-9 flex-1 border-0 bg-transparent px-0 text-sm text-slate-200 shadow-none focus:ring-0">
-            <span className="line-clamp-1 flex-1 text-left">{activeOrganizationName}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {organizations.map((organization) => (
-              <SelectItem key={organization.id} value={organization.id}>
-                {organization.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+
+              router.push(nextRoute as never);
+              router.refresh();
+            } catch (caughtError) {
+              setError(getErrorMessage(caughtError));
+            }
+          });
+        }}
+        disabled={isPending || organizationsQuery.isPending}
+      >
+        <SelectTrigger className="h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-slate-200 shadow-none focus-visible:border-cyan-400/40 focus-visible:ring-2 focus-visible:ring-cyan-400/20">
+          <SelectValue placeholder={currentOrganizationName}>
+            {(value) =>
+              organizations.find((organization) => organization.id === value)?.name ??
+              activeOrganizationName
+            }
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl">
+          {organizations.map((organization) => (
+            <SelectItem
+              key={organization.id}
+              value={organization.id}
+              className="rounded-md text-slate-100"
+            >
+              {organization.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {error ? (
         <Alert variant="destructive" className="rounded-2xl">
           <AlertTitle>Workspace switch failed</AlertTitle>
