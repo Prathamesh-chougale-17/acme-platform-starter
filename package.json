@@ -10,7 +10,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --filter=!@acme/web-e2e",
     "test:e2e": "pnpm --filter @acme/web-e2e run test:e2e",
-    "auth:generate": "pnpm exec dotenv -e apps/api/.env -e apps/web/.env -- auth generate --config packages/auth/src/server.ts --output packages/db/src/schema/auth.ts --yes",
+    "auth:generate": "pnpm exec dotenv -e apps/api/.env -e apps/web/.env -- auth generate --config packages/auth/src/server.ts --output packages/db/src/schema/auth.ts --yes && pnpm exec prettier --write packages/db/src/schema/auth.ts",
     "db:generate": "pnpm exec dotenv -e apps/api/.env -- drizzle-kit generate --config=packages/db/drizzle.config.ts",
     "db:migrate": "pnpm exec dotenv -e apps/api/.env -- tsx packages/db/src/migrate.ts",
     "db:studio": "pnpm exec dotenv -e apps/api/.env -- drizzle-kit studio --config=packages/db/drizzle.config.ts",
