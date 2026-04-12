@@ -1,12 +1,194 @@
-# Acme Platform
+# Acme Platform Starter
 
-Production-grade full-stack monorepo starter built with Turborepo, Next.js, Hono, Drizzle, PostgreSQL, and a local Grafana observability stack.
+Production-grade full-stack monorepo starter for modern SaaS and internal platforms.
 
-## Setup Strategy
+This repository combines a Next.js frontend, a Hono API, shared TypeScript packages, Drizzle ORM, PostgreSQL, and a local observability stack built on Grafana, Loki, Tempo, Prometheus, and OpenTelemetry.
 
-This starter uses official scaffolding first and then layers shared workspace packages for contracts, logging, observability, configuration, and database access. The frontend and backend stay thin by consuming transport-neutral Zod DTOs from `@acme/shared` and repository utilities from `@acme/db`.
+## Recommended Repository Name
 
-## Exact Scaffold Commands
+If you want the repository name to communicate that this is a reusable foundation and not only one specific product, the best name is:
+
+`acme-platform-starter`
+
+Good alternatives depending on intent:
+
+- `acme-platform` if this is the actual product monorepo
+- `acme-platform-foundation` if this is an internal engineering baseline
+- `acme-saas-starter` if you want the template positioning to be more explicit
+
+My recommendation is to keep the package and workspace scope as `@acme/*`, but name the Git repository `acme-platform-starter`.
+
+## What This Repo Includes
+
+- Turborepo monorepo orchestration with pnpm
+- Next.js App Router frontend in `apps/web`
+- Hono Node.js API in `apps/api`
+- Shared packages for config, database, logger, contracts, observability, UI, ESLint, and TypeScript presets
+- PostgreSQL with Drizzle schema and migration workflow
+- Vitest unit and integration testing
+- Playwright E2E placeholder
+- Husky and lint-staged for commit-time quality gates
+- Local observability stack with Grafana, Loki, Tempo, Prometheus, and OpenTelemetry Collector
+- Sentry placeholders for frontend and backend
+
+## Technology Stack
+
+### Monorepo and Tooling
+
+- Node.js 22+
+- pnpm
+- Turborepo
+- TypeScript
+- ESLint
+- Prettier
+- Husky
+- lint-staged
+
+### Frontend
+
+- Next.js
+- React
+- Tailwind CSS
+- TanStack Query
+- Zod
+
+### Backend
+
+- Hono
+- Zod
+- Pino
+- Prometheus metrics
+- OpenTelemetry
+
+### Data
+
+- PostgreSQL
+- Drizzle ORM
+
+### Observability
+
+- Grafana
+- Loki
+- Tempo
+- Prometheus
+- OpenTelemetry Collector
+- Sentry
+
+## Architecture
+
+### High-Level Design
+
+- `apps/web` is the presentation layer
+- `apps/api` is the HTTP transport layer
+- `packages/shared` contains transport-neutral contracts and response types
+- `packages/db` contains schema, migrations, client, and repositories
+- `packages/config` owns runtime env validation
+- `packages/logger` owns structured logging and Loki shipping
+- `packages/observability` owns OpenTelemetry bootstrap and trace helpers
+- services encapsulate business logic
+- repositories encapsulate persistence logic
+- route handlers stay thin and orchestrate validation, services, and response formatting
+
+### Request Flow
+
+```mermaid
+flowchart LR
+    Browser["Next.js Web App"] --> API["Hono API"]
+    API --> Services["Service Layer"]
+    Services --> Repos["Repository Layer"]
+    Repos --> DB["PostgreSQL"]
+    API --> Metrics["/metrics"]
+    API --> Logs["Pino Logger"]
+    API --> Traces["OpenTelemetry"]
+    Logs --> Loki["Loki"]
+    Traces --> OTel["OTel Collector"]
+    OTel --> Tempo["Tempo"]
+    Metrics --> Prom["Prometheus"]
+    Loki --> Grafana["Grafana"]
+    Tempo --> Grafana
+    Prom --> Grafana
+```
+
+## Workspace Layout
+
+```text
+apps/
+  api/         Hono API service
+  web/         Next.js frontend
+  web-e2e/     Playwright smoke-test placeholder
+
+packages/
+  config/              Zod-based env loaders
+  db/                  Drizzle schema, migrations, repositories
+  eslint-config/       Shared flat ESLint configuration
+  logger/              Pino logger and Loki transport
+  observability/       OpenTelemetry bootstrap and helpers
+  shared/              DTOs, Zod schemas, constants, response envelopes
+  typescript-config/   Shared tsconfig presets
+  ui/                  Shared UI primitives
+
+infra/
+  observability/
+    grafana/
+    loki-config.yml
+    otel-collector-config.yaml
+    prometheus.yml
+    tempo.yaml
+```
+
+## Current Application Features
+
+### Frontend
+
+- Landing page
+- Health dashboard page
+- Users page
+- Typed API client
+- TanStack Query data fetching and mutations
+- Shared UI package usage
+- Frontend env parsing
+- Sentry placeholder wiring
+
+### API
+
+- Versioned routes under `/api/v1`
+- `GET /health`
+- `GET /users`
+- `POST /users`
+- `GET /logs-test`
+- `GET /error-test`
+- `GET /metrics`
+- request ID middleware
+- request logging middleware
+- latency measurement
+- structured error handling
+- CORS
+- Prometheus metrics
+
+### Data Layer
+
+- Drizzle schema
+- migration generation
+- migration runner
+- users repository
+- PostgreSQL-ready local setup
+
+## Prerequisites
+
+- Node.js 22 or newer
+- pnpm enabled through Corepack
+- Docker Desktop or Docker Engine with Compose
+
+Recommended setup:
+
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+## How This Repo Was Scaffolded
+
+This project was created by preferring official CLIs first and then layering the shared packages manually.
 
 ```bash
 corepack enable
@@ -21,35 +203,137 @@ pnpm install
 pnpm exec husky init
 ```
 
-Note: in this Codex environment the Sentry wizard itself was blocked by a non-interactive TTY requirement, so the repo includes the equivalent Next.js Sentry placeholder files manually.
+Note:
 
-## Workspace Layout
+- In this environment the official Sentry wizard could not complete because it requires an interactive TTY.
+- The equivalent placeholder integration files were added manually so the repo still has the correct wiring points.
 
-```text
-apps/
-  api/        Hono API with services, metrics, and structured error handling
-  web/        Next.js App Router frontend
-  web-e2e/    Playwright smoke-test placeholder
-packages/
-  config/         Zod-based env loaders
-  db/             Drizzle schema, migrations, repositories
-  eslint-config/  Shared flat ESLint configs
-  logger/         Reusable Pino setup with Loki shipping
-  observability/  OpenTelemetry bootstrap and trace helpers
-  shared/         Shared DTOs, response envelopes, constants
-  typescript-config/ Shared TS presets
-  ui/             Shared UI primitives
-infra/
-  observability/  Grafana, Loki, Tempo, Prometheus, OTel Collector configs
+## Getting Started
+
+### 1. Install Dependencies
+
+```bash
+pnpm install
 ```
 
-## Core Scripts
+### 2. Create Environment Files
+
+Create these files before starting the apps:
+
+- root `.env`
+- `apps/api/.env`
+- `apps/web/.env`
+
+Start from the checked-in examples:
+
+```bash
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env
+```
+
+### 3. Start Local Infrastructure
+
+```bash
+docker compose up -d
+```
+
+### 4. Generate or Refresh Drizzle Migration Files
+
+```bash
+pnpm db:generate
+```
+
+### 5. Apply Migrations
+
+```bash
+pnpm db:migrate
+```
+
+### 6. Start the Monorepo in Development
+
+```bash
+pnpm dev
+```
+
+## Local URLs
+
+### Apps
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:3001`
+- API health: `http://localhost:3001/api/v1/health`
+- API metrics: `http://localhost:3001/metrics`
+
+### Observability
+
+- Grafana: `http://localhost:3002`
+- Prometheus: `http://localhost:9090`
+- Loki API: `http://localhost:3100`
+- Tempo API: `http://localhost:3200`
+- OTel Collector OTLP HTTP: `http://localhost:4318`
+- OTel Collector OTLP gRPC: `localhost:4317`
+
+Important note:
+
+- Grafana is the main UI for logs and traces
+- Prometheus has its own UI
+- Loki and Tempo mostly expose APIs and admin/debug endpoints, not full standalone product UIs in this local setup
+
+## Environment Variables
+
+### Root `.env`
+
+Use root `.env` for infrastructure-level settings such as Grafana credentials and other values that are not app-runtime-specific.
+
+### `apps/api/.env`
+
+This file powers:
+
+- API runtime
+- database tooling scripts
+- Drizzle commands
+- local logging and observability configuration
+
+Key variables:
+
+- `PORT`
+- `DATABASE_URL`
+- `APP_ORIGIN`
+- `API_CORS_ORIGIN`
+- `API_SERVICE_NAME`
+- `API_SENTRY_DSN`
+- `API_LOG_LEVEL`
+- `API_LOG_TO_LOKI`
+- `OTEL_EXPORTER_OTLP_ENDPOINT`
+- `LOKI_URL`
+
+### `apps/web/.env`
+
+Key variables:
+
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_APP_ENV`
+- `NEXT_PUBLIC_SENTRY_DSN`
+
+## Scripts
+
+### Root Scripts
 
 ```bash
 pnpm dev
 pnpm build
 pnpm lint
 pnpm format
+pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm test:e2e
@@ -58,56 +342,317 @@ pnpm db:migrate
 pnpm db:studio
 ```
 
-## Local Development
+### Useful Filtered Commands
 
-1. Copy `.env.example` to `.env` for root-level infrastructure variables.
-2. Copy `apps/api/.env.example` to `apps/api/.env` for API and database tooling.
-3. The Docker Postgres service is exposed on host port `5433` to avoid conflicts with local PostgreSQL installs on `5432`.
-4. Start infrastructure:
+Run only the API:
 
-   ```bash
-   docker compose up -d
-   ```
+```bash
+pnpm --filter @acme/api dev
+```
 
-5. Generate the initial migration if you want to refresh it:
+Run only the web app:
 
-   ```bash
-   pnpm db:generate
-   ```
+```bash
+pnpm --filter @acme/web dev
+```
 
-6. Run the apps:
+Run only API tests:
 
-   ```bash
-   pnpm dev
-   ```
+```bash
+pnpm --filter @acme/api test
+```
 
-7. Open:
-   - Web: `http://localhost:3000`
-   - API: `http://localhost:3001/api/v1/health`
-   - Grafana: `http://localhost:3002`
-   - Prometheus: `http://localhost:9090`
+Run only web E2E tests:
 
-## Architecture Notes
+```bash
+pnpm --filter @acme/web-e2e test:e2e
+```
 
-- `apps/api` exposes versioned routes under `/api/v1` plus `/metrics`.
-- Shared Zod schemas and response envelopes live in `@acme/shared`.
-- Repositories live in `@acme/db`; route handlers delegate to services instead of touching persistence directly.
-- `@acme/logger` emits pretty local logs and can push structured logs straight to Loki.
-- `@acme/observability` exports Node OTel bootstrapping and request span helpers.
-- Frontend pages use a typed API client instead of importing route handlers or server internals.
+## Database Workflow
 
-## Observability Flow
+### Generate a Migration
 
-- API traces: `apps/api` -> OTel Collector -> Tempo
-- API metrics: `apps/api:/metrics` -> Prometheus -> Grafana
-- API logs: `@acme/logger` -> Loki -> Grafana
+```bash
+pnpm db:generate
+```
 
-The Grafana datasources and an overview dashboard are provisioned automatically from `infra/observability/grafana/provisioning`.
+### Apply Migrations
+
+```bash
+pnpm db:migrate
+```
+
+### Open Drizzle Studio
+
+```bash
+pnpm db:studio
+```
+
+### Database Notes
+
+- Docker Postgres is exposed on host port `5433`
+- Port `5433` is used intentionally to avoid conflicts with local PostgreSQL installs on `5432`
+- The root DB scripts use `apps/api/.env`
+
+## API Design Conventions
+
+- all public routes are versioned under `/api/v1`
+- route handlers validate request input with Zod
+- route handlers delegate to services
+- services delegate to repositories
+- persistence stays inside `packages/db`
+- responses use shared envelope types from `@acme/shared`
+- logging and request metadata are applied centrally through middleware
+
+## Frontend Design Conventions
+
+- App Router everywhere
+- API access goes through typed client utilities and query hooks
+- TanStack Query owns server-state lifecycle
+- shared contracts come from `@acme/shared`
+- shared UI primitives come from `@acme/ui`
+
+## Logging, Metrics, and Tracing
+
+### Logs
+
+- API logs are emitted through `@acme/logger`
+- development logs are pretty-printed in the terminal
+- Loki shipping is opt-in through `API_LOG_TO_LOKI=true`
+- Grafana is the preferred log viewer
+
+### Metrics
+
+- the API exposes Prometheus metrics at `/metrics`
+- Prometheus scrapes the API and the OTel Collector
+- Tempo metrics-generator remote-writes span metrics into Prometheus
+
+Useful Prometheus queries:
+
+```promql
+up
+```
+
+```promql
+sum by (route, status_code) (rate(acme_api_http_requests_total[5m]))
+```
+
+```promql
+histogram_quantile(0.95, sum by (le) (rate(acme_api_http_request_duration_ms_bucket[5m])))
+```
+
+```promql
+sum by (service) (rate(traces_spanmetrics_calls_total[5m]))
+```
+
+### Traces
+
+- API spans are exported to the OTel Collector
+- the collector forwards traces into Tempo
+- Grafana Explore is the preferred trace UI
+- TraceQL metrics now work locally because Tempo metrics-generator has:
+  - an active ring member
+  - local-blocks enabled
+  - durable generator WAL and traces paths
+  - remote-write configured to Prometheus
+
+## Grafana Usage
+
+### Log Exploration
+
+1. Open Grafana at `http://localhost:3002`
+2. Go to `Explore`
+3. Select the `Loki` datasource
+4. Run:
+
+```logql
+{service="acme-api", environment="development"}
+```
+
+Useful filters:
+
+```logql
+{service="acme-api", environment="development"} |= "request completed"
+```
+
+```logql
+{service="acme-api", environment="development"} |= "/api/v1/users"
+```
+
+### Trace Exploration
+
+1. Open `Explore`
+2. Select the `Tempo` datasource
+3. Search for recent traces or use TraceQL
+
+Examples:
+
+```traceql
+{}
+```
+
+```traceql
+{ resource.service.name = "acme-api" }
+```
+
+### Dashboards
+
+Grafana datasources and starter dashboards are provisioned automatically from:
+
+- `infra/observability/grafana/provisioning/datasources`
+- `infra/observability/grafana/provisioning/dashboards`
+
+## Prometheus Usage
+
+Prometheus has a simple built-in UI at `http://localhost:9090`.
+
+Start with these queries:
+
+```promql
+up
+```
+
+```promql
+up{job="acme-api"}
+```
+
+```promql
+up{job="otel-collector"}
+```
+
+```promql
+rate(acme_api_http_requests_total[5m])
+```
+
+## Sentry
+
+Sentry is wired as a safe placeholder.
+
+### Backend
+
+- DSN variable: `API_SENTRY_DSN`
+- SDK: `@sentry/node`
+- enabled only when a DSN exists and `NODE_ENV` is not `development`
+
+### Frontend
+
+- DSN variable: `NEXT_PUBLIC_SENTRY_DSN`
+- Next.js instrumentation files are already present
+- frontend capture is gated for production-style usage
+
+Recommended setup:
+
+- create one Sentry project for `web`
+- create one Sentry project for `api`
+- use separate DSNs for cleaner issue separation
 
 ## Testing
 
-- `packages/shared`: sample contract parsing test
-- `packages/config`: env validation tests
-- `packages/logger`: logger binding serialization test
-- `apps/api`: route-level integration tests using `app.request()`
-- `apps/web-e2e`: Playwright smoke-test placeholder
+### Included
+
+- unit tests for shared packages
+- env validation tests
+- logger tests
+- API integration tests using `app.request()`
+- Playwright smoke-test placeholder
+
+### Commands
+
+```bash
+pnpm test
+pnpm test:e2e
+```
+
+## Docker Services
+
+The Compose stack includes:
+
+- PostgreSQL
+- Loki
+- Tempo
+- OpenTelemetry Collector
+- Prometheus
+- Grafana
+
+Bring the stack up:
+
+```bash
+docker compose up -d
+```
+
+Recreate observability services after config changes:
+
+```bash
+docker compose up -d --force-recreate tempo otel-collector prometheus grafana loki
+```
+
+## Troubleshooting
+
+### Grafana shows no API logs
+
+Check:
+
+- `API_LOG_TO_LOKI=true` in `apps/api/.env`
+- API process restarted after env changes
+- Loki datasource works in Grafana Explore
+
+### Tempo TraceQL metrics return 500 or `empty ring`
+
+This was caused locally by an incomplete Tempo metrics-generator config.
+
+The current config already fixes this by enabling:
+
+- `metrics_generator.ring.instance_port`
+- generator WAL and traces storage
+- `local-blocks`
+- Prometheus remote-write
+
+If you change `tempo.yaml`, recreate:
+
+```bash
+docker compose up -d --force-recreate tempo prometheus grafana
+```
+
+### Prometheus target for `otel-collector` is down
+
+The collector now exposes telemetry metrics on `:8889`.
+
+If it becomes stale after config changes:
+
+```bash
+docker compose up -d --force-recreate otel-collector prometheus
+```
+
+### `db:generate` says `Invalid URL`
+
+- make sure `DATABASE_URL` is in `apps/api/.env`
+- make sure it is a valid URL
+- URL-encode passwords if they contain reserved characters
+
+### API starts but health page hangs
+
+- make sure the API is actually running on `3001`
+- check `apps/api/.env`
+- inspect terminal logs with:
+
+```bash
+pnpm --filter @acme/api dev
+```
+
+## Operational Next Steps
+
+This starter is ready for the next layer of platform work:
+
+- authentication
+- Redis
+- Kafka or event streaming
+- background jobs
+- feature flags
+- CI pipelines
+- preview deployments
+- production secrets management
+- managed database environments
+
+## License
+
+Add the license that matches how you want to share or reuse the starter.
