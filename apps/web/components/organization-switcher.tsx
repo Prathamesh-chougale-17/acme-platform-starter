@@ -12,7 +12,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@acme/ui';
 
 import { authClient } from '@/lib/auth-client';
@@ -37,6 +36,10 @@ export function OrganizationSwitcher({
 
   const organizations = organizationsQuery.data ?? [];
   const activeOrganizationId = activeOrganizationQuery.data?.id ?? currentOrganizationId;
+  const activeOrganizationName =
+    organizations.find((organization) => organization.id === activeOrganizationId)?.name ??
+    activeOrganizationQuery.data?.name ??
+    currentOrganizationName;
   const deniedTarget = searchParams.get('denied');
   const nextRoute = useMemo(() => {
     if (deniedTarget?.startsWith('/')) {
@@ -92,7 +95,7 @@ export function OrganizationSwitcher({
           disabled={isPending || organizationsQuery.isPending}
         >
           <SelectTrigger className="h-9 flex-1 border-0 bg-transparent px-0 text-sm text-slate-200 shadow-none focus:ring-0">
-            <SelectValue placeholder="Choose workspace" />
+            <span className="line-clamp-1 flex-1 text-left">{activeOrganizationName}</span>
           </SelectTrigger>
           <SelectContent>
             {organizations.map((organization) => (
