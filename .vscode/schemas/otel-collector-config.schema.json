@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acme-platform.local/schemas/otel-collector-config.schema.json",
+  "title": "OpenTelemetry Collector Config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "receivers": {
+      "$ref": "#/$defs/componentMap"
+    },
+    "processors": {
+      "$ref": "#/$defs/componentMap"
+    },
+    "exporters": {
+      "$ref": "#/$defs/componentMap"
+    },
+    "connectors": {
+      "$ref": "#/$defs/componentMap"
+    },
+    "extensions": {
+      "$ref": "#/$defs/componentMap"
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pipelines": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "receivers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "processors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "exporters": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "telemetry": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  },
+  "required": ["receivers", "exporters", "service"],
+  "$defs": {
+    "componentMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  }
+}

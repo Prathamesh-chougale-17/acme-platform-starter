@@ -1,0 +1,5 @@
+{
+  "yaml.schemas": {
+    "./.vscode/schemas/otel-collector-config.schema.json": "infra/observability/otel-collector-config.yaml"
+  }
+}
