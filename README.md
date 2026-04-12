@@ -62,25 +62,26 @@ pnpm db:studio
 
 1. Copy `.env.example` to `.env` for root-level infrastructure variables.
 2. Copy `apps/api/.env.example` to `apps/api/.env` for API and database tooling.
-3. Start infrastructure:
+3. The Docker Postgres service is exposed on host port `5433` to avoid conflicts with local PostgreSQL installs on `5432`.
+4. Start infrastructure:
 
    ```bash
    docker compose up -d
    ```
 
-4. Generate the initial migration if you want to refresh it:
+5. Generate the initial migration if you want to refresh it:
 
    ```bash
    pnpm db:generate
    ```
 
-5. Run the apps:
+6. Run the apps:
 
    ```bash
    pnpm dev
    ```
 
-6. Open:
+7. Open:
    - Web: `http://localhost:3000`
    - API: `http://localhost:3001/api/v1/health`
    - Grafana: `http://localhost:3002`
