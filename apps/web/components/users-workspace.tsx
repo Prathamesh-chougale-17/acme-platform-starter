@@ -27,7 +27,7 @@ import {
   Separator,
   Skeleton,
 } from '@acme/ui';
-import type { CreateInvitationInput, CurrentUserDto } from '@acme/shared';
+import type { AuthRole, CreateInvitationInput, CurrentUserDto } from '@acme/shared';
 
 import { authClient } from '@/lib/auth-client';
 import { useCreateInvitationMutation, useUsersWorkspaceQuery } from '@/lib/queries';
@@ -57,7 +57,16 @@ const memberRoleVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
   member: 'outline',
 };
 
-export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
+const canManageMembers = (role: AuthRole | null | undefined) =>
+  role === 'owner' || role === 'admin';
+
+export function UsersWorkspace({
+  viewer,
+  deniedRoute,
+}: {
+  viewer: CurrentUserDto;
+  deniedRoute?: string | undefined;
+}) {
   const router = useRouter();
   const [inviteForm, setInviteForm] = useState<CreateInvitationInput>({
     email: '',
@@ -74,6 +83,7 @@ export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
   const effectiveViewer = workspace?.viewer ?? viewer;
   const members = workspace?.members ?? [];
   const invitations = workspace?.invitations ?? [];
+  const canInviteMembers = canManageMembers(effectiveViewer.role);
   const errorMessage = createInvitationMutation.isError
     ? getErrorMessage(createInvitationMutation.error)
     : workspaceQuery.isError
@@ -174,71 +184,107 @@ export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
       <div className="space-y-3">
         <Badge>Organization Members</Badge>
         <h1 className="text-4xl font-semibold tracking-tight text-white">
-          Invite and manage teammates
+          {canInviteMembers ? 'Invite and manage teammates' : 'View organization teammates'}
         </h1>
         <p className="max-w-3xl text-base leading-7 text-slate-300">
           Active organization: {effectiveViewer.organization.name}. The same session and role data
           are consumed by Next.js, Better Auth, and the Hono API.
         </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge variant={memberRoleVariant[effectiveViewer.role ?? 'member'] ?? 'outline'}>
+            {effectiveViewer.role ?? 'member'}
+          </Badge>
+          <span className="text-sm text-slate-400">
+            {canInviteMembers
+              ? 'This workspace can invite teammates and access operational dashboards.'
+              : 'This workspace is read-only for member management and cannot access operational dashboards.'}
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.2fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Invite a teammate</CardTitle>
+            <CardTitle>{canInviteMembers ? 'Invite a teammate' : 'Role-aware workspace'}</CardTitle>
             <CardDescription>
-              Owner and admin roles can invite members into the active organization.
+              {canInviteMembers
+                ? 'Owner and admin roles can invite members into the active organization.'
+                : 'Owners and admins can invite teammates. Members can browse the current organization only.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <Input
-                placeholder="jane@example.com"
-                type="email"
-                value={inviteForm.email}
-                onChange={(event) =>
-                  setInviteForm((current) => ({ ...current, email: event.target.value }))
-                }
-              />
-              <Select
-                value={inviteForm.role}
-                onValueChange={(value) =>
-                  setInviteForm((current) => ({
-                    ...current,
-                    role: value as CreateInvitationInput['role'],
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={createInvitationMutation.isPending}
-              >
-                {createInvitationMutation.isPending ? 'Sending invitation...' : 'Send invitation'}
-              </Button>
-            </form>
-            {notice ? (
-              <Alert>
-                <AlertTitle>Invitation queued</AlertTitle>
-                <AlertDescription>{notice}</AlertDescription>
-              </Alert>
-            ) : null}
-            {errorMessage ? (
+            {deniedRoute ? (
               <Alert variant="destructive">
-                <AlertTitle>Unable to send invitation</AlertTitle>
-                <AlertDescription>{errorMessage}</AlertDescription>
+                <AlertTitle>Access denied for {deniedRoute}</AlertTitle>
+                <AlertDescription>
+                  Your current workspace role is <strong>{effectiveViewer.role ?? 'member'}</strong>{' '}
+                  in <strong>{effectiveViewer.organization.name}</strong>. Switch the active
+                  workspace if you need an organization where you are an owner or admin.
+                </AlertDescription>
               </Alert>
             ) : null}
+            {canInviteMembers ? (
+              <>
+                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                  <Input
+                    placeholder="jane@example.com"
+                    type="email"
+                    value={inviteForm.email}
+                    onChange={(event) =>
+                      setInviteForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                  />
+                  <Select
+                    value={inviteForm.role}
+                    onValueChange={(value) =>
+                      setInviteForm((current) => ({
+                        ...current,
+                        role: value as CreateInvitationInput['role'],
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={createInvitationMutation.isPending}
+                  >
+                    {createInvitationMutation.isPending
+                      ? 'Sending invitation...'
+                      : 'Send invitation'}
+                  </Button>
+                </form>
+                {notice ? (
+                  <Alert>
+                    <AlertTitle>Invitation queued</AlertTitle>
+                    <AlertDescription>{notice}</AlertDescription>
+                  </Alert>
+                ) : null}
+                {errorMessage ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Unable to send invitation</AlertTitle>
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
+                ) : null}
+              </>
+            ) : (
+              <Alert>
+                <AlertTitle>Member access is active</AlertTitle>
+                <AlertDescription>
+                  This account can view teammates in the active organization, but invitation
+                  management and operational dashboards are reserved for owners and admins.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
@@ -308,32 +354,41 @@ export function UsersWorkspace({ viewer }: { viewer: CurrentUserDto }) {
             <CardDescription>These links are delivered by the shared auth mailer.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {invitations.length === 0 ? (
+            {canInviteMembers ? (
+              invitations.length === 0 ? (
+                <Alert>
+                  <AlertTitle>No pending invitations</AlertTitle>
+                  <AlertDescription>
+                    New invites will appear here until they are accepted or expire.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  {invitations.map((invitation, index) => (
+                    <div key={invitation.id} className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{invitation.email}</p>
+                          <p className="text-muted-foreground">
+                            Expires {new Date(invitation.expiresAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge variant={invitation.role === 'admin' ? 'secondary' : 'outline'}>
+                          {invitation.role}
+                        </Badge>
+                      </div>
+                      {index < invitations.length - 1 ? <Separator /> : null}
+                    </div>
+                  ))}
+                </>
+              )
+            ) : (
               <Alert>
-                <AlertTitle>No pending invitations</AlertTitle>
+                <AlertTitle>Invitation visibility is restricted</AlertTitle>
                 <AlertDescription>
-                  New invites will appear here until they are accepted or expire.
+                  Owners and admins can review pending invitations for the active organization.
                 </AlertDescription>
               </Alert>
-            ) : (
-              <>
-                {invitations.map((invitation, index) => (
-                  <div key={invitation.id} className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-white">{invitation.email}</p>
-                        <p className="text-muted-foreground">
-                          Expires {new Date(invitation.expiresAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge variant={invitation.role === 'admin' ? 'secondary' : 'outline'}>
-                        {invitation.role}
-                      </Badge>
-                    </div>
-                    {index < invitations.length - 1 ? <Separator /> : null}
-                  </div>
-                ))}
-              </>
             )}
           </CardContent>
         </Card>

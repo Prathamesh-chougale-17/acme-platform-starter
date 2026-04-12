@@ -1,4 +1,4 @@
-import { auth, type ResolvedAuthContext } from '@acme/auth';
+import { auth, canManageMembers, type ResolvedAuthContext } from '@acme/auth';
 import type { UsersRepository } from '@acme/db';
 import type { CreateInvitationInput, CurrentUserDto, UsersWorkspaceDto } from '@acme/shared';
 
@@ -42,7 +42,9 @@ export class UserService {
 
     const [members, invitations] = await Promise.all([
       this.usersRepository.listOrganizationMembers(authContext.organizationId),
-      this.usersRepository.listPendingInvitations(authContext.organizationId),
+      canManageMembers(authContext.role)
+        ? this.usersRepository.listPendingInvitations(authContext.organizationId)
+        : Promise.resolve([]),
     ]);
 
     return {
@@ -59,6 +61,14 @@ export class UserService {
   ): Promise<{ invitationId: string }> {
     if (!authContext.organizationId) {
       throw new AppError(403, 'FORBIDDEN', 'An active organization is required to invite members');
+    }
+
+    if (!canManageMembers(authContext.role)) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'Only owners and admins can invite teammates into the active organization',
+      );
     }
 
     try {

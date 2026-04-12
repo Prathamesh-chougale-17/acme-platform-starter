@@ -1,6 +1,6 @@
 import { loadApiEnv } from '@acme/config';
 import type { UsersRepository } from '@acme/db';
-import type { ApiResponse, CurrentUserDto, HealthDto, UsersWorkspaceDto } from '@acme/shared';
+import type { ApiResponse, AuthRole, CurrentUserDto, HealthDto, UsersWorkspaceDto } from '@acme/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authUser = {
@@ -13,7 +13,28 @@ const authUser = {
   updatedAt: new Date('2026-01-01T10:00:00.000Z'),
 };
 
-const authContext = {
+const authContext: {
+  session: {
+    id: string;
+    userId: string;
+    expiresAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    token: string;
+    activeOrganizationId: string;
+  };
+  user: typeof authUser;
+  organizationId: string;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    logo: null;
+    createdAt: string;
+    metadata: Record<string, never>;
+  };
+  role: AuthRole;
+} = {
   session: {
     id: 'session-1',
     userId: authUser.id,
@@ -33,10 +54,13 @@ const authContext = {
     createdAt: new Date('2026-01-01T10:00:00.000Z').toISOString(),
     metadata: {},
   },
-  role: 'owner' as const,
+  role: 'owner',
 };
 
+let currentAuthContext = authContext;
+
 vi.mock('@acme/auth', () => ({
+  canManageMembers: (role: string | null | undefined) => role === 'owner' || role === 'admin',
   auth: {
     api: {
       createInvitation: vi.fn(async () => ({
@@ -45,7 +69,7 @@ vi.mock('@acme/auth', () => ({
     },
   },
   resolveAuthContext: vi.fn(async (headers: Headers) =>
-    headers.get('cookie')?.includes('session=valid') ? authContext : null,
+    headers.get('cookie')?.includes('session=valid') ? currentAuthContext : null,
   ),
   requireSession: vi.fn(async (headers: Headers) => {
     if (!headers.get('cookie')?.includes('session=valid')) {
@@ -54,16 +78,22 @@ vi.mock('@acme/auth', () => ({
       throw error;
     }
 
-    return authContext;
+    return currentAuthContext;
   }),
-  requireRole: vi.fn(async (headers: Headers) => {
+  requireRole: vi.fn(async (headers: Headers, roles?: readonly string[]) => {
     if (!headers.get('cookie')?.includes('session=valid')) {
       const error = new Error('Authentication required');
       error.name = 'UnauthorizedAuthError';
       throw error;
     }
 
-    return authContext;
+    if (roles && !roles.includes(currentAuthContext.role)) {
+      const error = new Error('Forbidden');
+      error.name = 'ForbiddenAuthError';
+      throw error;
+    }
+
+    return currentAuthContext;
   }),
 }));
 
@@ -112,6 +142,7 @@ describe('api routes', () => {
 
   beforeEach(() => {
     repository = createRepository();
+    currentAuthContext = authContext;
   });
 
   it('returns health metadata', async () => {
@@ -224,6 +255,65 @@ describe('api routes', () => {
       throw new Error('Expected a successful invitation response');
     }
     expect(body.data.invitationId).toBe('a079fe59-bcec-4ceb-a07b-dc0a439e0d76');
+  });
+
+  it('hides invitation data for member-only workspaces', async () => {
+    currentAuthContext = {
+      ...authContext,
+      role: 'member',
+    };
+
+    const app = createApp({
+      env: loadApiEnv({
+        DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      }),
+      usersRepository: repository,
+    });
+
+    const response = await app.request('/api/v1/users', {
+      headers: {
+        cookie: 'session=valid',
+      },
+    });
+    const body = (await response.json()) as ApiResponse<UsersWorkspaceDto>;
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful users workspace response');
+    }
+    expect(body.data.viewer.role).toBe('member');
+    expect(body.data.invitations).toHaveLength(0);
+  });
+
+  it('rejects invitation creation for member workspaces', async () => {
+    currentAuthContext = {
+      ...authContext,
+      role: 'member',
+    };
+
+    const app = createApp({
+      env: loadApiEnv({
+        DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      }),
+      usersRepository: repository,
+    });
+
+    const response = await app.request('/api/v1/invitations', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: 'session=valid',
+      },
+      body: JSON.stringify({
+        email: 'grace@example.com',
+        role: 'member',
+      }),
+    });
+    const body = (await response.json()) as ApiResponse<never>;
+
+    expect(response.status).toBe(403);
+    expect(body.success).toBe(false);
   });
 
   it('returns structured errors for the error-test route', async () => {
