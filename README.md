@@ -60,26 +60,27 @@ pnpm db:studio
 
 ## Local Development
 
-1. Copy `.env.example` to `.env` and adjust values if needed.
-2. Start infrastructure:
+1. Copy `.env.example` to `.env` for root-level infrastructure variables.
+2. Copy `apps/api/.env.example` to `apps/api/.env` for API and database tooling.
+3. Start infrastructure:
 
    ```bash
    docker compose up -d
    ```
 
-3. Generate the initial migration if you want to refresh it:
+4. Generate the initial migration if you want to refresh it:
 
    ```bash
    pnpm db:generate
    ```
 
-4. Run the apps:
+5. Run the apps:
 
    ```bash
    pnpm dev
    ```
 
-5. Open:
+6. Open:
    - Web: `http://localhost:3000`
    - API: `http://localhost:3001/api/v1/health`
    - Grafana: `http://localhost:3002`
