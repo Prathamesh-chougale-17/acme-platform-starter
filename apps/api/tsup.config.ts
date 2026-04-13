@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['esm'],
+  format: ['cjs'],
   sourcemap: true,
   clean: true,
   target: 'node22',
@@ -16,8 +16,8 @@ export default defineConfig({
     '@hono/zod-validator',
     '@sentry/node',
     'prom-client',
-    'pino',
-    'pino-pretty',
-    'nodemailer',
   ],
+  outExtension: () => ({
+    js: '.cjs',
+  }),
 });

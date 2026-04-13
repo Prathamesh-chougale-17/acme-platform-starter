@@ -179,8 +179,12 @@ process.on('unhandledRejection', (reason) => {
   });
 });
 
-try {
-  await main();
-} catch (error) {
-  await shutdown({ reason: 'startupFailure', exitCode: 1, error });
-}
+const start = async () => {
+  try {
+    await main();
+  } catch (error) {
+    await shutdown({ reason: 'startupFailure', exitCode: 1, error });
+  }
+};
+
+void start();

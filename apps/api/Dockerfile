@@ -14,6 +14,6 @@ RUN pnpm --filter @acme/api build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/apps/api/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.cjs"]
