@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "pnpm exec dotenv -e .env -- tsx watch src/index.ts",
     "build": "pnpm exec tsup --config tsup.config.ts",
-    "start": "node dist/index.cjs",
+    "start": "pnpm exec dotenv -e .env -- node dist/index.cjs",
     "lint": "pnpm exec eslint .",
     "typecheck": "pnpm exec tsc --noEmit",
     "test": "pnpm exec vitest run"
