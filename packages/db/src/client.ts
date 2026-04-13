@@ -18,6 +18,7 @@ const globalCache = globalThis as typeof globalThis & {
 
 const createDatabase = () => {
   const env = loadDbEnv(process.env);
+  // Runtime traffic always uses DATABASE_URL. Migration traffic is handled separately.
   const client = postgres(env.DATABASE_URL, {
     max: 10,
     prepare: false,

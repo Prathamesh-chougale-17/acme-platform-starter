@@ -1,4 +1,4 @@
-import { loadDbEnv } from '@acme/config';
+import { getMigrationDatabaseUrl, loadDbEnv } from '@acme/config';
 import { defineConfig } from 'drizzle-kit';
 
 const env = loadDbEnv(process.env);
@@ -8,7 +8,7 @@ export default defineConfig({
   schema: './packages/db/src/schema/*.ts',
   dialect: 'postgresql',
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: getMigrationDatabaseUrl(env),
   },
   strict: true,
 });

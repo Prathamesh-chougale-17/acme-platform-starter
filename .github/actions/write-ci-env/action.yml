@@ -6,6 +6,10 @@ inputs:
     description: Synthetic database URL to use in generated API and root env files.
     required: false
     default: postgres://postgres:postgres@localhost:5432/acme_platform
+  database-migration-url:
+    description: Synthetic migration database URL. Falls back to database-url when omitted.
+    required: false
+    default: ''
   app-origin:
     description: Browser origin used by Better Auth and API CORS in CI.
     required: false
@@ -29,16 +33,28 @@ runs:
     - name: Write root env
       shell: bash
       run: |
+        migration_url="${{ inputs.database-migration-url }}"
+        if [ -z "$migration_url" ]; then
+          migration_url="${{ inputs.database-url }}"
+        fi
+
         cat > .env <<EOF
         DATABASE_URL=${{ inputs.database-url }}
+        DATABASE_MIGRATION_URL=$migration_url
         EOF
 
     - name: Write API env
       shell: bash
       run: |
+        migration_url="${{ inputs.database-migration-url }}"
+        if [ -z "$migration_url" ]; then
+          migration_url="${{ inputs.database-url }}"
+        fi
+
         cat > apps/api/.env <<EOF
         PORT=3001
         DATABASE_URL=${{ inputs.database-url }}
+        DATABASE_MIGRATION_URL=$migration_url
         APP_ORIGIN=${{ inputs.app-origin }}
         API_CORS_ORIGIN=${{ inputs.app-origin }}
         BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}

@@ -29,6 +29,7 @@ Use this ownership model:
 
 - Vercel owns preview web envs
 - Use non-production `DATABASE_URL`
+- Preview apps reuse staging database credentials in this phase
 - Use non-production `BETTER_AUTH_SECRET`
 - Use non-production email credentials
 - Never reuse production DB, auth, or email secrets
@@ -54,6 +55,7 @@ Use this ownership model:
 ### Real secrets
 
 - `DATABASE_URL`
+- `DATABASE_MIGRATION_URL`
 - `BETTER_AUTH_SECRET`
 - `RESEND_API_KEY`
 - `SMTP_PASSWORD`
@@ -141,6 +143,7 @@ Use this ownership model:
   - `VERCEL_ORG_ID`
   - `VERCEL_PROJECT_ID`
   - `RAILWAY_TOKEN`
+- `DATABASE_MIGRATION_URL` is allowed in protected GitHub Environments for manual staging and production migration workflows
 - Do not store production `DATABASE_URL`, `BETTER_AUTH_SECRET`, or email provider runtime secrets for normal CI jobs
 
 ## Rotation Checklist
@@ -192,6 +195,10 @@ Rotate immediately if a value has been pasted into chat, terminals, screenshots,
    - `/users`
    - `/health` role gating
 5. Confirm preview and staging do not point to production DB or production auth secrets
+
+Related runbook:
+
+- [database-environments.md](./database-environments.md)
 
 ## Guardrails
 

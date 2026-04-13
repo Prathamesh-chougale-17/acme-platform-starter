@@ -369,6 +369,11 @@ Use root `.env` for local infrastructure-level settings such as Grafana credenti
 
 For deployed environments, use platform-native env stores instead of committed or copied `.env` files.
 
+Optional local DB tooling variable:
+
+- `DATABASE_MIGRATION_URL`
+- if omitted locally, Drizzle tooling falls back to `DATABASE_URL`
+
 ### `apps/api/.env`
 
 This file powers:
@@ -385,6 +390,7 @@ Key variables:
 
 - `PORT`
 - `DATABASE_URL`
+- `DATABASE_MIGRATION_URL`
 - `APP_ORIGIN`
 - `API_CORS_ORIGIN`
 - `BETTER_AUTH_SECRET`
@@ -440,7 +446,7 @@ Use platform-native secret stores as the source of truth for deployed environmen
 
 Secret classes:
 
-- Real secrets: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `SMTP_PASSWORD`, `API_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`
+- Real secrets: `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `SMTP_PASSWORD`, `API_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`
 - Sensitive config: `AUTH_FROM_EMAIL`, `SMTP_USER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`
 - Environment-specific config: `BETTER_AUTH_URL`, `APP_ORIGIN`, `API_CORS_ORIGIN`, `API_UPSTREAM_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_ENV`, `PORT`, `API_SERVICE_NAME`, `API_LOG_LEVEL`, `API_LOG_TO_LOKI`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOKI_URL`
 
@@ -462,6 +468,34 @@ Rotation rules:
 Detailed runbook:
 
 - [docs/operations/secrets-management.md](./docs/operations/secrets-management.md)
+
+## Database Environments
+
+Use this database model:
+
+- local development uses Docker Postgres
+- preview reuses the staging Supabase project
+- staging and production use separate Supabase projects
+- runtime traffic uses `DATABASE_URL`
+- Drizzle generation and migration tooling uses `DATABASE_MIGRATION_URL` when present, otherwise it falls back to `DATABASE_URL`
+
+Connection strategy:
+
+- Vercel web should use a Supabase transaction pooler URL for runtime `DATABASE_URL`
+- Railway API may use a working pooled or direct runtime `DATABASE_URL`
+- protected GitHub Actions migration workflows should use `DATABASE_MIGRATION_URL`
+
+Migration promotion:
+
+- generate migrations locally
+- let CI verify committed migrations on ephemeral Postgres
+- run staging migrations first through a manual GitHub workflow
+- verify staging flows
+- run production migrations through the same protected workflow after approval
+
+Database environment runbook:
+
+- [docs/operations/database-environments.md](./docs/operations/database-environments.md)
 
 ## Scripts
 
@@ -491,6 +525,7 @@ GitHub Actions is the default CI provider for this repo.
 The main workflow is:
 
 - `.github/workflows/ci.yml`
+- `.github/workflows/database-migrate.yml`
 
 It runs on:
 
@@ -528,6 +563,11 @@ It verifies:
 CI does not depend on committed local `.env` files or production secrets.
 
 GitHub Actions should only hold CI and future deployment credentials, not app runtime production secrets.
+
+Protected database migrations use GitHub Environment secrets:
+
+- `staging` environment stores `DATABASE_MIGRATION_URL`
+- `production` environment stores `DATABASE_MIGRATION_URL` and should require approval before execution
 
 - `.github/actions/write-ci-env` generates deterministic `apps/api/.env` and `apps/web/.env`
 - pull request jobs use synthetic auth, mailer, and app env values
@@ -926,7 +966,6 @@ This starter is ready for the next layer of platform work:
 - background jobs
 - webhooks
 - feature flags
-- managed database environments
 - audit logging
 
 ## License

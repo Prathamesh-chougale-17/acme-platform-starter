@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { loadApiEnv } from './api';
 import { loadBetterAuthEnv } from './auth';
+import { getMigrationDatabaseUrl, loadDbEnv } from './db';
 import { loadWebEnv } from './web';
 
 describe('config', () => {
@@ -20,6 +21,27 @@ describe('config', () => {
         NEXT_PUBLIC_API_BASE_URL: 'not-a-url',
       }),
     ).toThrowError();
+  });
+
+  it('falls back to DATABASE_URL when DATABASE_MIGRATION_URL is absent', () => {
+    const env = loadDbEnv({
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+    });
+
+    expect(getMigrationDatabaseUrl(env)).toBe(
+      'postgres://postgres:postgres@localhost:5432/acme_platform',
+    );
+  });
+
+  it('prefers DATABASE_MIGRATION_URL when provided', () => {
+    const env = loadDbEnv({
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      DATABASE_MIGRATION_URL: 'postgres://postgres:postgres@localhost:5433/acme_platform',
+    });
+
+    expect(getMigrationDatabaseUrl(env)).toBe(
+      'postgres://postgres:postgres@localhost:5433/acme_platform',
+    );
   });
 
   it('parses better-auth env with defaults', () => {
