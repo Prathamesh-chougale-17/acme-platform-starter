@@ -32,6 +32,7 @@ export class ApiClientError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 8_000;
+const INVITATION_REQUEST_TIMEOUT_MS = 45_000;
 
 const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
   const text = await response.text();
@@ -134,7 +135,8 @@ export const apiClient = {
       },
       CreateInvitationResultDtoSchema,
       {
-        timeoutMs: 20_000,
+        timeoutMs: INVITATION_REQUEST_TIMEOUT_MS,
+        timeoutMessage: `Invitation request timed out after ${INVITATION_REQUEST_TIMEOUT_MS / 1000}s. The invite may still finish in the background. Refresh the workspace and confirm the email provider is healthy.`,
       },
     ),
   acceptInvitation: (invitationId: string) =>

@@ -34,7 +34,7 @@ import type {
   CurrentUserDto,
 } from '@acme/shared';
 
-import { apiClient } from '@/lib/api-client';
+import { ApiClientError, apiClient } from '@/lib/api-client';
 import { useAuditLogsQuery, useUsersWorkspaceQuery } from '@/lib/queries';
 
 const getErrorMessage = (error: unknown) =>
@@ -47,6 +47,8 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
+
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 const getInitials = (value: string) =>
   value
@@ -64,6 +66,9 @@ const memberRoleVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
 
 const canManageMembers = (role: AuthRole | null | undefined) =>
   role === 'owner' || role === 'admin';
+
+const isRequestTimeoutError = (error: unknown) =>
+  error instanceof ApiClientError && error.code === 'REQUEST_TIMEOUT';
 
 const getActorLabel = (entry: AuditLogEntryDto) =>
   entry.actor?.name ?? entry.actor?.email ?? entry.targetEmail ?? 'A teammate';
@@ -134,6 +139,26 @@ export function UsersWorkspace({
       setNotice(`Invitation queued for ${submittedInvite.email}`);
       await Promise.all([workspaceQuery.refetch(), auditLogsQuery.refetch()]);
     } catch (error) {
+      if (isRequestTimeoutError(error)) {
+        const [workspaceResult] = await Promise.all([
+          workspaceQuery.refetch(),
+          auditLogsQuery.refetch(),
+        ]);
+        const refreshedInvitations = workspaceResult.data?.invitations ?? [];
+        const matchingInvitation = refreshedInvitations.find(
+          (invitation) =>
+            normalizeEmail(invitation.email) === normalizeEmail(submittedInvite.email) &&
+            invitation.role === submittedInvite.role,
+        );
+
+        if (matchingInvitation) {
+          setInviteForm({ email: '', role: 'member' });
+          setNotice(`Invitation queued for ${submittedInvite.email}`);
+          setSetupError(null);
+          return;
+        }
+      }
+
       setSetupError(getErrorMessage(error));
     } finally {
       setIsInviting(false);
