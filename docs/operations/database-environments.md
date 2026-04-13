@@ -23,14 +23,14 @@ This repo uses one database shape across environments, but different connection 
 - Database: dedicated Supabase staging project
 - Web runtime `DATABASE_URL`: Supabase transaction pooler
 - API runtime `DATABASE_URL`: pooled or direct connection string that works for the staging Railway runtime
-- GitHub migration `DATABASE_MIGRATION_URL`: migration-capable connection string for staging
+- GitHub migration `DATABASE_MIGRATION_URL`: Supabase session pooler on port `5432` by default, or direct only if the runner can reach it
 
 ### Production
 
 - Database: dedicated Supabase production project
 - Web runtime `DATABASE_URL`: Supabase transaction pooler
 - API runtime `DATABASE_URL`: pooled or direct connection string that works for the production Railway runtime
-- GitHub migration `DATABASE_MIGRATION_URL`: migration-capable connection string for production
+- GitHub migration `DATABASE_MIGRATION_URL`: Supabase session pooler on port `5432` by default, or direct only if the runner can reach it
 
 ## Connection Strategy
 
@@ -38,7 +38,7 @@ This repo uses one database shape across environments, but different connection 
 - `DATABASE_MIGRATION_URL` is migration-only
 - Vercel web should use the Supabase transaction pooler because Better Auth and the web runtime run there
 - Railway API may use a working pooled or direct connection string for runtime traffic
-- GitHub migration workflows should use a migration-capable URL that is safe for Drizzle migration execution
+- GitHub migration workflows should use the Supabase session pooler by default because GitHub-hosted runners may not be able to reach Supabase direct IPv6-only endpoints
 
 ## Migration Promotion Flow
 

@@ -484,6 +484,7 @@ Connection strategy:
 - Vercel web should use a Supabase transaction pooler URL for runtime `DATABASE_URL`
 - Railway API may use a working pooled or direct runtime `DATABASE_URL`
 - protected GitHub Actions migration workflows should use `DATABASE_MIGRATION_URL`
+- for GitHub-hosted runners, prefer the Supabase session pooler URL on port `5432` for `DATABASE_MIGRATION_URL`
 
 Migration promotion:
 
@@ -947,6 +948,12 @@ docker compose up -d --force-recreate otel-collector prometheus
 - make sure `DATABASE_URL` is in `apps/api/.env`
 - make sure it is a valid URL
 - URL-encode passwords if they contain reserved characters
+
+### `db:migrate` fails in GitHub Actions with `ENETUNREACH`
+
+- check the `DATABASE_MIGRATION_URL` secret in the selected GitHub Environment
+- if it points at a Supabase direct host like `db.<project>.supabase.co`, switch it to the Supabase session pooler URL on port `5432`
+- keep transaction pooler URLs for runtime traffic, not GitHub migration workflows
 
 ### API starts but health page hangs
 
