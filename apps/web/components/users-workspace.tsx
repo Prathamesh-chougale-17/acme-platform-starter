@@ -30,6 +30,7 @@ import {
 import type { AuthRole, CreateInvitationInput, CurrentUserDto } from '@acme/shared';
 
 import { authClient } from '@/lib/auth-client';
+import { ApiClientError } from '@/lib/api-client';
 import { useCreateInvitationMutation, useUsersWorkspaceQuery } from '@/lib/queries';
 
 const getErrorMessage = (error: unknown) =>
@@ -93,13 +94,26 @@ export function UsersWorkspace({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNotice(null);
+    const submittedInvite = { ...inviteForm };
 
     try {
-      await createInvitationMutation.mutateAsync(inviteForm);
+      await createInvitationMutation.mutateAsync(submittedInvite);
       setInviteForm({ email: '', role: 'member' });
-      setNotice(`Invitation queued for ${inviteForm.email}`);
-    } catch {
-      // Mutation state drives the error message UI.
+      setNotice(`Invitation queued for ${submittedInvite.email}`);
+    } catch (error) {
+      if (error instanceof ApiClientError && error.code === 'REQUEST_TIMEOUT') {
+        const refreshedWorkspace = await workspaceQuery.refetch();
+        const invitationWasCreated = refreshedWorkspace.data?.invitations.some(
+          (invitation) => invitation.email === submittedInvite.email,
+        );
+
+        if (invitationWasCreated) {
+          setInviteForm({ email: '', role: 'member' });
+          setNotice(
+            `Invitation queued for ${submittedInvite.email}. Delivery took longer than the browser wait, but the pending invite was created successfully.`,
+          );
+        }
+      }
     }
   };
 

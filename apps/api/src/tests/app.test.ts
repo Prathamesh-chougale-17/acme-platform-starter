@@ -64,14 +64,17 @@ const authContext: {
 };
 
 let currentAuthContext = authContext;
+const { createInvitationMock } = vi.hoisted(() => ({
+  createInvitationMock: vi.fn(async () => ({
+    id: 'a079fe59-bcec-4ceb-a07b-dc0a439e0d76',
+  })),
+}));
 
 vi.mock('@acme/auth', () => ({
   canManageMembers: (role: string | null | undefined) => role === 'owner' || role === 'admin',
   auth: {
     api: {
-      createInvitation: vi.fn(async () => ({
-        id: 'a079fe59-bcec-4ceb-a07b-dc0a439e0d76',
-      })),
+      createInvitation: createInvitationMock,
     },
   },
   resolveAuthContext: vi.fn(async (headers: Headers) =>
@@ -149,6 +152,10 @@ describe('api routes', () => {
   beforeEach(() => {
     repository = createRepository();
     currentAuthContext = authContext;
+    createInvitationMock.mockReset();
+    createInvitationMock.mockResolvedValue({
+      id: 'a079fe59-bcec-4ceb-a07b-dc0a439e0d76',
+    });
   });
 
   it('returns health metadata', async () => {
@@ -261,6 +268,45 @@ describe('api routes', () => {
       throw new Error('Expected a successful invitation response');
     }
     expect(body.data.invitationId).toBe('a079fe59-bcec-4ceb-a07b-dc0a439e0d76');
+  });
+
+  it('returns a conflict when Better Auth reports an existing invitation', async () => {
+    createInvitationMock.mockRejectedValueOnce({
+      message: 'User is already invited to this organization',
+      statusCode: 400,
+      body: {
+        code: 'USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION',
+        message: 'User is already invited to this organization',
+      },
+    });
+
+    const app = createApp({
+      env: loadApiEnv({
+        DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      }),
+      usersRepository: repository,
+    });
+
+    const response = await app.request('/api/v1/invitations', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: 'session=valid',
+      },
+      body: JSON.stringify({
+        email: 'grace@example.com',
+        role: 'member',
+      }),
+    });
+    const body = (await response.json()) as ApiResponse<never>;
+
+    expect(response.status).toBe(409);
+    expect(body.success).toBe(false);
+    if (body.success) {
+      throw new Error('Expected an error response');
+    }
+    expect(body.error.code).toBe('CONFLICT');
+    expect(body.error.message).toBe('User is already invited to this organization');
   });
 
   it('hides invitation data for member-only workspaces', async () => {

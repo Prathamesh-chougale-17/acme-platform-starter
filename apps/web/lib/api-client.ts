@@ -23,6 +23,7 @@ export class ApiClientError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 8_000;
+const INVITATION_REQUEST_TIMEOUT_MS = 20_000;
 
 const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
   const text = await response.text();
@@ -38,9 +39,18 @@ const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown
   }
 };
 
-const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> => {
+const request = async <T>(
+  path: string,
+  init: RequestInit,
+  schema: z.ZodType<T>,
+  options?: {
+    timeoutMs?: number;
+    timeoutMessage?: string;
+  },
+): Promise<T> => {
+  const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(path, {
@@ -74,7 +84,8 @@ const request = async <T>(path: string, init: RequestInit, schema: z.ZodType<T>)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new ApiClientError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Confirm the web API proxy is configured and the upstream API is reachable.`,
+        options?.timeoutMessage ??
+          `Request timed out after ${timeoutMs / 1000}s. Confirm the web API proxy is configured and the upstream API is reachable.`,
         504,
         'REQUEST_TIMEOUT',
       );
@@ -101,5 +112,10 @@ export const apiClient = {
       z.object({
         invitationId: z.uuid(),
       }),
+      {
+        timeoutMs: INVITATION_REQUEST_TIMEOUT_MS,
+        timeoutMessage:
+          'Invitation delivery is taking longer than expected. We will check whether the invite was still created before showing an error.',
+      },
     ),
 };

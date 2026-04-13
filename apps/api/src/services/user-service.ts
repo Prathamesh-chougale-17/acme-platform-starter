@@ -7,6 +7,40 @@ import { AppError } from '../lib/http';
 const isUniqueViolation = (error: unknown): boolean =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === '23505';
 
+const isBetterAuthConflict = (
+  error: unknown,
+  code: string,
+): error is {
+  statusCode?: number;
+  message?: string;
+  body?: {
+    code?: string;
+    message?: string;
+  };
+} => {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  const candidate = error as {
+    statusCode?: number;
+    message?: string;
+    body?: {
+      code?: string;
+      message?: string;
+    };
+  };
+
+  if (candidate.body?.code === code) {
+    return true;
+  }
+
+  const normalizedMessage = candidate.message?.toLowerCase();
+  const normalizedBodyMessage = candidate.body?.message?.toLowerCase();
+
+  return Boolean(normalizedMessage && normalizedBodyMessage && normalizedMessage.includes(normalizedBodyMessage));
+};
+
 const toIsoString = (value: Date | string): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 
@@ -86,6 +120,17 @@ export class UserService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new AppError(409, 'CONFLICT', 'A pending invitation already exists for that email');
+      }
+
+      if (
+        isBetterAuthConflict(error, 'USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION') ||
+        isBetterAuthConflict(error, 'USER_ALREADY_MEMBER_OF_ORGANIZATION')
+      ) {
+        throw new AppError(
+          409,
+          'CONFLICT',
+          error.body?.message ?? 'A pending invitation already exists for that email',
+        );
       }
 
       throw error;
