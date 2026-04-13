@@ -1,3 +1,5 @@
+import dns from 'node:dns';
+
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 
@@ -39,6 +41,39 @@ type AuthMailerDependencies = {
   smtpClient?: SmtpClient;
 };
 
+type LookupCallback = (error: NodeJS.ErrnoException | null, address: string, family: number) => void;
+type LookupOptions = {
+  family?: number;
+  hints?: number;
+  all?: boolean;
+};
+
+const SMTP_CONNECTION_TIMEOUT_MS = 20_000;
+const SMTP_DNS_TIMEOUT_MS = 10_000;
+
+const lookupIpv4Address = (
+  hostname: string,
+  options: LookupOptions | number,
+  callback: LookupCallback,
+): void => {
+  const normalizedOptions =
+    typeof options === 'number'
+      ? {
+          family: options,
+        }
+      : (options ?? {});
+
+  dns.lookup(
+    hostname,
+    {
+      ...normalizedOptions,
+      family: 4,
+      all: false,
+    },
+    callback,
+  );
+};
+
 const createResendClient = (apiKey?: string): ResendClient | undefined =>
   apiKey ? new Resend(apiKey) : undefined;
 
@@ -54,11 +89,18 @@ const createSmtpClient = (env: BetterAuthEnv): SmtpClient | undefined => {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
+    connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+    greetingTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+    dnsTimeout: SMTP_DNS_TIMEOUT_MS,
+    tls: {
+      servername: env.SMTP_HOST,
+    },
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASSWORD,
     },
-  });
+    lookup: lookupIpv4Address as never,
+  } as never);
 };
 
 const getMissingEmailProviderMessage = (env: BetterAuthEnv) => {
