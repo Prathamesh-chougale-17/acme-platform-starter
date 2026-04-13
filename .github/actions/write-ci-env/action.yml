@@ -1,9 +1,9 @@
 name: Write CI Env
-description: Generate deterministic environment files for CI jobs.
+description: Generate deterministic synthetic environment files for CI jobs.
 
 inputs:
   database-url:
-    description: Database URL to use in generated API and root env files.
+    description: Synthetic database URL to use in generated API and root env files.
     required: false
     default: postgres://postgres:postgres@localhost:5432/acme_platform
   app-origin:
@@ -15,11 +15,11 @@ inputs:
     required: false
     default: http://localhost:3001
   better-auth-secret:
-    description: Synthetic Better Auth secret for CI.
+    description: Synthetic Better Auth secret for CI. Do not pass production runtime secrets here.
     required: false
     default: ci-better-auth-secret-123456789012345
   auth-from-email:
-    description: Sender identity used in CI auth flows.
+    description: Synthetic sender identity used in CI auth flows.
     required: false
     default: Acme Platform <auth@acme-platform.local>
 

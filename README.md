@@ -251,6 +251,8 @@ Create these files before starting the apps:
 - `apps/api/.env`
 - `apps/web/.env`
 
+These files are for local development only. Do not upload them to Vercel, Railway, Supabase, or GitHub.
+
 Start from the checked-in examples:
 
 ```bash
@@ -363,7 +365,9 @@ Important note:
 
 ### Root `.env`
 
-Use root `.env` for infrastructure-level settings such as Grafana credentials and other values that are not app-runtime-specific.
+Use root `.env` for local infrastructure-level settings such as Grafana credentials and other values that are not app-runtime-specific.
+
+For deployed environments, use platform-native env stores instead of committed or copied `.env` files.
 
 ### `apps/api/.env`
 
@@ -374,6 +378,8 @@ This file powers:
 - Drizzle commands
 - local logging and observability configuration
 - Better Auth session validation inside the Hono API
+
+This file is a local-development input only. Railway becomes the source of truth for deployed API runtime envs.
 
 Key variables:
 
@@ -405,9 +411,12 @@ This file powers:
 - Better Auth route handler mounted in `apps/web`
 - auth emails and redirect URLs
 
+This file is a local-development input only. Vercel becomes the source of truth for deployed web runtime envs.
+
 Key variables:
 
 - `NEXT_PUBLIC_API_BASE_URL`
+- `API_UPSTREAM_URL`
 - `NEXT_PUBLIC_APP_ENV`
 - `NEXT_PUBLIC_SENTRY_DSN`
 - `BETTER_AUTH_SECRET`
@@ -419,6 +428,40 @@ Key variables:
 - `SMTP_SECURE`
 - `SMTP_USER`
 - `SMTP_PASSWORD`
+
+## Secrets Management
+
+Use platform-native secret stores as the source of truth for deployed environments:
+
+- Vercel owns web runtime envs
+- Railway owns API runtime envs
+- Supabase owns database infrastructure, but not runtime secret distribution
+- GitHub Actions owns CI and future deploy credentials only
+
+Secret classes:
+
+- Real secrets: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `SMTP_PASSWORD`, `API_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`
+- Sensitive config: `AUTH_FROM_EMAIL`, `SMTP_USER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`
+- Environment-specific config: `BETTER_AUTH_URL`, `APP_ORIGIN`, `API_CORS_ORIGIN`, `API_UPSTREAM_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_ENV`, `PORT`, `API_SERVICE_NAME`, `API_LOG_LEVEL`, `API_LOG_TO_LOKI`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOKI_URL`
+
+Environment rules:
+
+- `BETTER_AUTH_SECRET` must match between web and API within one environment
+- `BETTER_AUTH_SECRET` must differ across preview, staging, and production
+- preview must never reuse production DB, auth, or email secrets
+- local `.env` files are never the source of truth for deployed environments
+- GitHub CI remains synthetic and fork-safe by default
+
+Rotation rules:
+
+- rotate DB credentials if they were shared in chat, screenshots, logs, or ad-hoc notes
+- rotate `BETTER_AUTH_SECRET` if the same value was reused across environments during setup
+- rotate `RESEND_API_KEY` or `SMTP_PASSWORD` if they were ever exposed outside the platform secret stores
+- update platform envs first, redeploy affected services second, then verify auth, invites, and protected routes
+
+Detailed runbook:
+
+- [docs/operations/secrets-management.md](./docs/operations/secrets-management.md)
 
 ## Scripts
 
@@ -483,6 +526,8 @@ It verifies:
 ### CI Environment Strategy
 
 CI does not depend on committed local `.env` files or production secrets.
+
+GitHub Actions should only hold CI and future deployment credentials, not app runtime production secrets.
 
 - `.github/actions/write-ci-env` generates deterministic `apps/api/.env` and `apps/web/.env`
 - pull request jobs use synthetic auth, mailer, and app env values
