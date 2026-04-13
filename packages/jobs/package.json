@@ -1,5 +1,5 @@
 {
-  "name": "@acme/auth",
+  "name": "@acme/jobs",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,19 +9,14 @@
   "dependencies": {
     "@acme/config": "workspace:*",
     "@acme/db": "workspace:*",
-    "@acme/jobs": "workspace:*",
     "@acme/shared": "workspace:*",
-    "@better-auth/drizzle-adapter": "^1.6.2",
-    "better-auth": "^1.6.2",
-    "nodemailer": "^8.0.5",
-    "resend": "^6.10.0"
+    "bullmq": "^5.61.2",
+    "ioredis": "^5.8.1",
+    "zod": "^4.3.6"
   },
   "scripts": {
     "lint": "pnpm exec eslint .",
     "typecheck": "pnpm exec tsc --noEmit",
     "test": "pnpm exec vitest run"
-  },
-  "devDependencies": {
-    "@types/nodemailer": "^8.0.0"
   }
 }

@@ -1,5 +1,7 @@
 import { auth, canManageMembers, type ResolvedAuthContext } from '@acme/auth';
-import type { AuditRepository, UsersRepository } from '@acme/db';
+import type { ServerFeatureFlags } from '@acme/config';
+import type { AuditRepository, UsersRepository, WebhookRepository } from '@acme/db';
+import { recordOrganizationAccessEvent } from '@acme/jobs';
 import type {
   AuditLogListDto,
   CreateInvitationInput,
@@ -112,6 +114,8 @@ export class UserService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly auditRepository: AuditRepository,
+    private readonly webhookRepository: WebhookRepository,
+    private readonly featureFlags: ServerFeatureFlags,
   ) {}
 
   getCurrentUser(authContext: ResolvedAuthContext): CurrentUserDto {
@@ -168,18 +172,43 @@ export class UserService {
         headers: requestHeaders,
       });
 
-      await this.auditRepository.appendAuditLog({
-        organizationId: authContext.organizationId,
-        eventType: 'invitation.created',
-        actorUserId: authContext.user.id,
-        actorRole: authContext.role,
-        targetEmail: input.email,
-        targetInvitationId: invitation.id,
-        requestId: auditRequestMetadata.requestId ?? null,
-        ipAddress: auditRequestMetadata.ipAddress ?? null,
-        userAgent: auditRequestMetadata.userAgent ?? null,
-        metadata: {
-          invitedRole: input.role,
+      await recordOrganizationAccessEvent({
+        auditRepository: this.auditRepository,
+        webhookRepository: this.webhookRepository,
+        featureFlags: this.featureFlags,
+        event: {
+          organizationId: authContext.organizationId,
+          eventType: 'invitation.created',
+          auditLog: {
+            organizationId: authContext.organizationId,
+            eventType: 'invitation.created',
+            actorUserId: authContext.user.id,
+            actorRole: authContext.role,
+            targetEmail: input.email,
+            targetInvitationId: invitation.id,
+            requestId: auditRequestMetadata.requestId ?? null,
+            ipAddress: auditRequestMetadata.ipAddress ?? null,
+            userAgent: auditRequestMetadata.userAgent ?? null,
+            metadata: {
+              invitedRole: input.role,
+            },
+          },
+          webhookPayload: {
+            occurredAt: new Date().toISOString(),
+            organizationId: authContext.organizationId,
+            eventType: 'invitation.created',
+            actor: {
+              userId: authContext.user.id,
+              role: authContext.role,
+            },
+            target: {
+              email: input.email,
+              invitationId: invitation.id,
+            },
+            metadata: {
+              invitedRole: input.role,
+            },
+          },
         },
       });
 
@@ -236,17 +265,40 @@ export class UserService {
         );
       }
 
-      await this.auditRepository.appendAuditLog({
-        organizationId,
-        eventType: 'organization.created',
-        actorUserId: authContext.user.id,
-        actorRole: 'owner',
-        requestId: auditRequestMetadata.requestId ?? null,
-        ipAddress: auditRequestMetadata.ipAddress ?? null,
-        userAgent: auditRequestMetadata.userAgent ?? null,
-        metadata: {
-          organizationName: input.name,
-          organizationSlug: input.slug,
+      await recordOrganizationAccessEvent({
+        auditRepository: this.auditRepository,
+        webhookRepository: this.webhookRepository,
+        featureFlags: this.featureFlags,
+        event: {
+          organizationId,
+          eventType: 'organization.created',
+          auditLog: {
+            organizationId,
+            eventType: 'organization.created',
+            actorUserId: authContext.user.id,
+            actorRole: 'owner',
+            requestId: auditRequestMetadata.requestId ?? null,
+            ipAddress: auditRequestMetadata.ipAddress ?? null,
+            userAgent: auditRequestMetadata.userAgent ?? null,
+            metadata: {
+              organizationName: input.name,
+              organizationSlug: input.slug,
+            },
+          },
+          webhookPayload: {
+            occurredAt: new Date().toISOString(),
+            organizationId,
+            eventType: 'organization.created',
+            actor: {
+              userId: authContext.user.id,
+              role: 'owner',
+            },
+            target: {},
+            metadata: {
+              organizationName: input.name,
+              organizationSlug: input.slug,
+            },
+          },
         },
       });
 
@@ -299,19 +351,45 @@ export class UserService {
         headers: requestHeaders,
       });
 
-      await this.auditRepository.appendAuditLog({
-        organizationId: invitation.organizationId,
-        eventType: 'invitation.accepted',
-        actorUserId: authContext.user.id,
-        actorRole: invitation.role,
-        targetUserId: authContext.user.id,
-        targetEmail: invitation.email,
-        targetInvitationId: invitation.id,
-        requestId: auditRequestMetadata.requestId ?? null,
-        ipAddress: auditRequestMetadata.ipAddress ?? null,
-        userAgent: auditRequestMetadata.userAgent ?? null,
-        metadata: {
-          invitedRole: invitation.role,
+      await recordOrganizationAccessEvent({
+        auditRepository: this.auditRepository,
+        webhookRepository: this.webhookRepository,
+        featureFlags: this.featureFlags,
+        event: {
+          organizationId: invitation.organizationId,
+          eventType: 'invitation.accepted',
+          auditLog: {
+            organizationId: invitation.organizationId,
+            eventType: 'invitation.accepted',
+            actorUserId: authContext.user.id,
+            actorRole: invitation.role,
+            targetUserId: authContext.user.id,
+            targetEmail: invitation.email,
+            targetInvitationId: invitation.id,
+            requestId: auditRequestMetadata.requestId ?? null,
+            ipAddress: auditRequestMetadata.ipAddress ?? null,
+            userAgent: auditRequestMetadata.userAgent ?? null,
+            metadata: {
+              invitedRole: invitation.role,
+            },
+          },
+          webhookPayload: {
+            occurredAt: new Date().toISOString(),
+            organizationId: invitation.organizationId,
+            eventType: 'invitation.accepted',
+            actor: {
+              userId: authContext.user.id,
+              role: invitation.role,
+            },
+            target: {
+              userId: authContext.user.id,
+              email: invitation.email,
+              invitationId: invitation.id,
+            },
+            metadata: {
+              invitedRole: invitation.role,
+            },
+          },
         },
       });
 

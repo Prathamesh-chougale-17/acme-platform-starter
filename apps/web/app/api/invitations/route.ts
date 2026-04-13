@@ -1,5 +1,7 @@
 import { auth, canManageMembers, requireRole } from '@acme/auth';
-import { createAuditRepository } from '@acme/db';
+import { loadBetterAuthEnv, resolveServerFeatureFlags } from '@acme/config';
+import { createAuditRepository, createWebhookRepository } from '@acme/db';
+import { recordOrganizationAccessEvent } from '@acme/jobs';
 import {
   CreateInvitationInputSchema,
   success,
@@ -8,6 +10,9 @@ import {
 } from '@acme/shared';
 
 const auditRepository = createAuditRepository();
+const webhookRepository = createWebhookRepository();
+const featureFlags = resolveServerFeatureFlags(process.env);
+const authEnv = loadBetterAuthEnv(process.env);
 
 const isUniqueViolation = (error: unknown): boolean =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === '23505';
@@ -128,18 +133,46 @@ export async function POST(request: Request) {
       headers: requestHeaders,
     });
 
-    await auditRepository.appendAuditLog({
-      organizationId: authContext.organizationId,
-      eventType: 'invitation.created',
-      actorUserId: authContext.user.id,
-      actorRole: authContext.role,
-      targetEmail: payload.email,
-      targetInvitationId: invitation.id,
-      requestId,
-      ipAddress: getClientIpAddress(requestHeaders),
-      userAgent: requestHeaders.get('user-agent'),
-      metadata: {
-        invitedRole: payload.role,
+    await recordOrganizationAccessEvent({
+      auditRepository,
+      webhookRepository,
+      featureFlags,
+      event: {
+        organizationId: authContext.organizationId,
+        eventType: 'invitation.created',
+        auditLog: {
+          organizationId: authContext.organizationId,
+          eventType: 'invitation.created',
+          actorUserId: authContext.user.id,
+          actorRole: authContext.role,
+          targetEmail: payload.email,
+          targetInvitationId: invitation.id,
+          requestId,
+          ipAddress: getClientIpAddress(requestHeaders),
+          userAgent: requestHeaders.get('user-agent'),
+          metadata: {
+            invitedRole: payload.role,
+            invitationOrigin: 'web',
+          },
+        },
+        webhookPayload: {
+          occurredAt: new Date().toISOString(),
+          organizationId: authContext.organizationId,
+          eventType: 'invitation.created',
+          actor: {
+            userId: authContext.user.id,
+            role: authContext.role,
+          },
+          target: {
+            email: payload.email,
+            invitationId: invitation.id,
+          },
+          metadata: {
+            invitedRole: payload.role,
+            invitationOrigin: 'web',
+            appOrigin: authEnv.APP_ORIGIN,
+          },
+        },
       },
     });
 

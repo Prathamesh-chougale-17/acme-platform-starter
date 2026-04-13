@@ -1,10 +1,12 @@
 import {
   createAuditRepository,
   createUsersRepository,
+  createWebhookRepository,
   type AuditRepository,
   type UsersRepository,
+  type WebhookRepository,
 } from '@acme/db';
-import { loadApiEnv, type ApiEnv } from '@acme/config';
+import { loadApiEnv, resolveServerFeatureFlags, type ApiEnv } from '@acme/config';
 import { createLogger } from '@acme/logger';
 import { APP_VERSION, API_V1_PREFIX } from '@acme/shared';
 import * as Sentry from '@sentry/node';
@@ -18,6 +20,7 @@ import { requestContextMiddleware, type AppContext } from './middleware/request-
 import { createV1Routes } from './routes/v1';
 import { HealthService } from './services/health-service';
 import { UserService } from './services/user-service';
+import { WebhookService } from './services/webhook-service';
 
 const splitCorsOrigins = (origins: string): string[] =>
   origins
@@ -25,7 +28,13 @@ const splitCorsOrigins = (origins: string): string[] =>
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+let sentryInitialized = false;
+
 const initSentry = (env: ApiEnv): void => {
+  if (sentryInitialized) {
+    return;
+  }
+
   Sentry.init({
     dsn: env.API_SENTRY_DSN,
     enabled: Boolean(env.API_SENTRY_DSN) && env.NODE_ENV !== 'development',
@@ -33,12 +42,15 @@ const initSentry = (env: ApiEnv): void => {
     release: APP_VERSION,
     tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 0,
   });
+
+  sentryInitialized = true;
 };
 
 export type CreateAppOptions = {
   env?: ApiEnv;
   usersRepository?: UsersRepository;
   auditRepository?: AuditRepository;
+  webhookRepository?: WebhookRepository;
 };
 
 export const createApp = (options: CreateAppOptions = {}) => {
@@ -56,8 +68,16 @@ export const createApp = (options: CreateAppOptions = {}) => {
 
   const usersRepository = options.usersRepository ?? createUsersRepository();
   const auditRepository = options.auditRepository ?? createAuditRepository();
-  const userService = new UserService(usersRepository, auditRepository);
+  const webhookRepository = options.webhookRepository ?? createWebhookRepository();
+  const featureFlags = resolveServerFeatureFlags(process.env);
+  const userService = new UserService(
+    usersRepository,
+    auditRepository,
+    webhookRepository,
+    featureFlags,
+  );
   const healthService = new HealthService(usersRepository, env);
+  const webhookService = new WebhookService(webhookRepository, env.BETTER_AUTH_SECRET);
 
   const app = new Hono<AppContext>();
 
@@ -99,6 +119,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
       env,
       userService,
       healthService,
+      webhookService,
     }),
   );
 

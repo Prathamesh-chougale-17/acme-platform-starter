@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { loadApiEnv } from './api';
 import { loadBetterAuthEnv } from './auth';
 import { getMigrationDatabaseUrl, loadDbEnv } from './db';
+import { loadAsyncPlatformEnv, resolveServerFeatureFlags } from './platform';
 import { loadWebEnv } from './web';
 
 describe('config', () => {
@@ -13,6 +14,7 @@ describe('config', () => {
 
     expect(env.PORT).toBe(3001);
     expect(env.API_SERVICE_NAME).toBe('acme-api');
+    expect(env.REDIS_PREFIX).toBe('acme-platform');
   });
 
   it('rejects invalid web env values', () => {
@@ -52,6 +54,7 @@ describe('config', () => {
 
     expect(env.BETTER_AUTH_URL).toBe('http://localhost:3000');
     expect(env.AUTH_FROM_EMAIL).toContain('auth@acme-platform.local');
+    expect(env.REDIS_PREFIX).toBe('acme-platform');
   });
 
   it('parses smtp auth env values when provided', () => {
@@ -77,5 +80,45 @@ describe('config', () => {
         DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
       }),
     ).toThrowError();
+  });
+
+  it('parses async platform env values with defaults', () => {
+    const env = loadAsyncPlatformEnv({});
+
+    expect(env.REDIS_URL).toBeUndefined();
+    expect(env.REDIS_PREFIX).toBe('acme-platform');
+  });
+
+  it('defaults server feature flags off when redis is not configured', () => {
+    expect(resolveServerFeatureFlags({})).toEqual({
+      asyncInviteEmail: false,
+      outgoingWebhooks: false,
+    });
+  });
+
+  it('defaults server feature flags on when redis is configured', () => {
+    expect(
+      resolveServerFeatureFlags({
+        REDIS_URL: 'redis://localhost:6379',
+      }),
+    ).toEqual({
+      asyncInviteEmail: true,
+      outgoingWebhooks: true,
+    });
+  });
+
+  it('allows explicit feature flag overrides', () => {
+    expect(
+      resolveServerFeatureFlags({
+        REDIS_URL: 'redis://localhost:6379',
+        FEATURE_FLAGS_JSON: JSON.stringify({
+          asyncInviteEmail: false,
+          outgoingWebhooks: true,
+        }),
+      }),
+    ).toEqual({
+      asyncInviteEmail: false,
+      outgoingWebhooks: true,
+    });
   });
 });

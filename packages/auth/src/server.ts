@@ -1,6 +1,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
-import { loadBetterAuthEnv } from '@acme/config';
+import { loadBetterAuthEnv, resolveServerFeatureFlags } from '@acme/config';
 import { getDb } from '@acme/db';
+import { enqueueInviteEmailJob } from '@acme/jobs';
 import { APP_NAME } from '@acme/shared';
 import { betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
@@ -10,6 +11,7 @@ import { createAuthMailer } from './mailer';
 
 const env = loadBetterAuthEnv(process.env);
 const mailer = createAuthMailer(env);
+const featureFlags = resolveServerFeatureFlags(process.env);
 
 const trustedOrigins = Array.from(
   new Set([env.BETTER_AUTH_URL, env.APP_ORIGIN, env.API_CORS_ORIGIN].filter(Boolean)),
@@ -65,6 +67,20 @@ export const auth = betterAuth({
       creatorRole: 'owner',
       requireEmailVerificationOnInvitation: false,
       async sendInvitationEmail({ email, inviter, invitation, organization, id }) {
+        if (featureFlags.asyncInviteEmail) {
+          try {
+            await enqueueInviteEmailJob({
+              invitationId: id,
+            });
+            return;
+          } catch (error) {
+            console.error('[auth-email] failed to enqueue invitation email job', {
+              invitationId: id,
+              error,
+            });
+          }
+        }
+
         await mailer.sendInvitation({
           email,
           inviterName: inviter.user.name,

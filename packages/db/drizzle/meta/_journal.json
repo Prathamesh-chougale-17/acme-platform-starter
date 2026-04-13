@@ -22,6 +22,13 @@
       "when": 1776090071342,
       "tag": "0002_third_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776096598934,
+      "tag": "0003_lazy_magdalene",
+      "breakpoints": true
     }
   ]
 }

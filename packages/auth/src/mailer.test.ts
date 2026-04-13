@@ -24,6 +24,9 @@ const createEnv = (overrides: Partial<BetterAuthEnv> = {}): BetterAuthEnv => ({
   SMTP_USER: undefined,
   SMTP_PASSWORD: undefined,
   NEXT_PUBLIC_API_BASE_URL: undefined,
+  REDIS_URL: undefined,
+  REDIS_PREFIX: 'acme-platform',
+  FEATURE_FLAGS_JSON: undefined,
   ...overrides,
 });
 

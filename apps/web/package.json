@@ -13,6 +13,7 @@
     "@acme/auth": "workspace:*",
     "@acme/config": "workspace:*",
     "@acme/db": "workspace:*",
+    "@acme/jobs": "workspace:*",
     "@acme/shared": "workspace:*",
     "@acme/ui": "workspace:*",
     "@sentry/nextjs": "^10.48.0",

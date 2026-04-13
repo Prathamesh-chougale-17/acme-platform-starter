@@ -12,7 +12,10 @@ This repository combines a Next.js frontend, a Hono API, Better Auth, shared Typ
 - Better Auth with database-backed sessions and organization-scoped RBAC
 - Shared packages for auth, config, database, logger, contracts, observability, UI, ESLint, and TypeScript presets
 - PostgreSQL with Drizzle schema and migration workflow
+- Redis-backed BullMQ queues and a dedicated API worker runtime
 - Resend-first auth mailer with Nodemailer SMTP fallback and local capture for development
+- outgoing organization-event webhooks with signed delivery retries
+- database-backed audit logging for organization access changes
 - Vitest unit and integration testing
 - Playwright E2E smoke coverage
 - Husky and lint-staged for commit-time quality gates
@@ -53,10 +56,16 @@ This repository combines a Next.js frontend, a Hono API, Better Auth, shared Typ
 ### Data and Auth
 
 - PostgreSQL
+- Redis
 - Drizzle ORM
 - Better Auth
 - Resend
 - Nodemailer
+
+### Async Platform
+
+- BullMQ
+- Railway Redis
 
 ### Observability
 
@@ -119,6 +128,7 @@ packages/
   config/              Zod-based env loaders
   db/                  Drizzle schema, migrations, repositories
   eslint-config/       Shared flat ESLint configuration
+  jobs/                Redis queues, typed payloads, event fan-out helpers
   logger/              Pino logger and Loki transport
   observability/       OpenTelemetry bootstrap and helpers
   shared/              DTOs, Zod schemas, constants, response envelopes
@@ -148,6 +158,8 @@ infra/
 - protected pages:
   - `/users` for organization member management
   - `/health` for operational dashboards
+- same-origin invitation bridge route:
+  - `POST /api/invitations`
 - typed API client
 - TanStack Query data fetching and mutations
 - Better Auth client integration
@@ -164,7 +176,13 @@ infra/
 - protected routes:
   - `GET /users`
   - `GET /me`
+  - `GET /audit-logs`
   - `POST /invitations`
+  - `POST /organizations`
+  - `POST /invitations/:invitationId/accept`
+  - `GET /webhooks`
+  - `POST /webhooks`
+  - `DELETE /webhooks/:endpointId`
 - guarded operational routes:
   - `GET /logs-test`
   - `GET /error-test`
@@ -198,6 +216,7 @@ infra/
 - migration runner
 - organization members repository
 - pending invitations repository
+- webhook endpoint and delivery repositories
 - PostgreSQL-ready local setup
 
 ## Prerequisites
@@ -373,6 +392,9 @@ Optional local DB tooling variable:
 
 - `DATABASE_MIGRATION_URL`
 - if omitted locally, Drizzle tooling falls back to `DATABASE_URL`
+- `REDIS_URL`
+- `REDIS_PREFIX`
+- `FEATURE_FLAGS_JSON`
 
 ### `apps/api/.env`
 
@@ -391,6 +413,9 @@ Key variables:
 - `PORT`
 - `DATABASE_URL`
 - `DATABASE_MIGRATION_URL`
+- `REDIS_URL`
+- `REDIS_PREFIX`
+- `FEATURE_FLAGS_JSON`
 - `APP_ORIGIN`
 - `API_CORS_ORIGIN`
 - `BETTER_AUTH_SECRET`
@@ -423,6 +448,9 @@ Key variables:
 
 - `NEXT_PUBLIC_API_BASE_URL`
 - `API_UPSTREAM_URL`
+- `REDIS_URL`
+- `REDIS_PREFIX`
+- `FEATURE_FLAGS_JSON`
 - `NEXT_PUBLIC_APP_ENV`
 - `NEXT_PUBLIC_SENTRY_DSN`
 - `BETTER_AUTH_SECRET`
@@ -446,9 +474,9 @@ Use platform-native secret stores as the source of truth for deployed environmen
 
 Secret classes:
 
-- Real secrets: `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `SMTP_PASSWORD`, `API_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`
+- Real secrets: `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `SMTP_PASSWORD`, `API_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `REDIS_URL`
 - Sensitive config: `AUTH_FROM_EMAIL`, `SMTP_USER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`
-- Environment-specific config: `BETTER_AUTH_URL`, `APP_ORIGIN`, `API_CORS_ORIGIN`, `API_UPSTREAM_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_ENV`, `PORT`, `API_SERVICE_NAME`, `API_LOG_LEVEL`, `API_LOG_TO_LOKI`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOKI_URL`
+- Environment-specific config: `BETTER_AUTH_URL`, `APP_ORIGIN`, `API_CORS_ORIGIN`, `API_UPSTREAM_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_APP_ENV`, `PORT`, `API_SERVICE_NAME`, `API_LOG_LEVEL`, `API_LOG_TO_LOKI`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOKI_URL`, `REDIS_PREFIX`, `FEATURE_FLAGS_JSON`
 
 Environment rules:
 
@@ -498,6 +526,25 @@ Database environment runbook:
 
 - [docs/operations/database-environments.md](./docs/operations/database-environments.md)
 
+## Async Platform
+
+Use this async model:
+
+- Railway Redis is the shared async backbone in deployed environments
+- `apps/api` exposes the HTTP service
+- `apps/api` also exposes a dedicated worker entrypoint for BullMQ consumers
+- Better Auth invitation email delivery uses the queue when Redis-backed async delivery is enabled
+- successful organization access changes can fan out signed outgoing webhooks after audit persistence
+
+Feature flags:
+
+- `asyncInviteEmail`
+- `outgoingWebhooks`
+
+Async platform runbook:
+
+- [docs/operations/async-platform.md](./docs/operations/async-platform.md)
+
 ## Scripts
 
 ### Root Scripts
@@ -515,6 +562,7 @@ pnpm auth:generate
 pnpm db:generate
 pnpm db:migrate
 pnpm db:studio
+pnpm --filter @acme/api worker
 ```
 
 ## Continuous Integration
@@ -558,6 +606,11 @@ It verifies:
 - Better Auth generated schema stays committed
 - Drizzle SQL artifacts stay committed
 - migrations apply on a fresh PostgreSQL service
+
+The `async-verify` job runs on the same trigger set and verifies:
+
+- Redis-backed queue wiring
+- async domain-event fan-out helpers
 
 ### CI Environment Strategy
 
@@ -639,10 +692,12 @@ Route protection is layered:
 
 1. owner or admin opens `/users`
 2. owner or admin submits the invite form
-3. Better Auth creates the invitation and the shared mailer sends through Resend or SMTP
-4. if neither provider is configured outside production, the mailer falls back to in-memory capture so local flows do not hard-fail
-5. the invited user opens `/accept-invite?invitationId=...`
-6. after sign-in or sign-up, the user accepts the invitation and joins the organization
+3. Better Auth creates the invitation
+4. when Redis-backed async delivery is enabled, invitation email delivery is queued and handled by the API worker
+5. if async delivery is disabled, the shared mailer sends through Resend or SMTP inline
+6. if neither provider is configured outside production, the mailer falls back to in-memory capture so local flows do not hard-fail
+7. the invited user opens `/accept-invite?invitationId=...`
+8. after sign-in or sign-up, the user accepts the invitation and joins the organization
 
 ### Password Reset Flow
 
@@ -867,6 +922,7 @@ pnpm test:e2e
 The Compose stack includes:
 
 - PostgreSQL
+- Redis
 - Loki
 - Tempo
 - OpenTelemetry Collector
@@ -965,15 +1021,32 @@ docker compose up -d --force-recreate otel-collector prometheus
 pnpm --filter @acme/api dev
 ```
 
-## Operational Next Steps
+### Queue-backed invites or webhooks are not processing
 
-This starter is ready for the next layer of platform work:
+Check:
 
-- Redis
-- background jobs
-- webhooks
-- feature flags
+- `REDIS_URL` is set for the service running the worker
+- the worker process is deployed with `pnpm --filter @acme/api worker`
+- `FEATURE_FLAGS_JSON` is not explicitly disabling `asyncInviteEmail` or `outgoingWebhooks`
+- Railway Redis and the worker share the same private network
+
+## Platform Status
+
+The core platform roadmap in this starter now includes:
+
+- managed database environments
+- production secrets management
 - audit logging
+- Redis-backed background jobs
+- outgoing webhooks
+- internal feature flags
+
+Likely next expansion ideas:
+
+- incoming webhook handlers
+- webhook management UI
+- additional queued jobs beyond invitation delivery
+- external or operator-facing feature flag management
 
 ## License
 

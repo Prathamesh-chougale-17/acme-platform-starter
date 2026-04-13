@@ -1,9 +1,9 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { aliasedTable, desc, eq, sql } from 'drizzle-orm';
 
 import type { AuthRole, OrganizationMemberDto, PendingInvitationDto, UserDto } from '@acme/shared';
 
 import { getDb } from '../client';
-import { invitations, members, users } from '../schema';
+import { invitations, members, organizations, users } from '../schema';
 
 export interface UsersRepository {
   listOrganizationMembers(organizationId: string): Promise<OrganizationMemberDto[]>;
@@ -15,9 +15,13 @@ export interface UsersRepository {
 export type InvitationAuditTarget = {
   id: string;
   organizationId: string;
+  organizationName: string;
   email: string;
   role: AuthRole;
+  status: string;
   inviterId: string;
+  inviterName: string | null;
+  expiresAt: string;
 };
 
 const toUserDto = (record: typeof users.$inferSelect): UserDto => ({
@@ -77,9 +81,20 @@ export const createUsersRepository = (): UsersRepository => ({
 
   async findInvitationById(invitationId) {
     const database = getDb();
+    const inviterUsers = aliasedTable(users, 'inviter_users');
     const [invitation] = await database
-      .select()
+      .select({
+        invitation: invitations,
+        organization: {
+          name: organizations.name,
+        },
+        inviter: {
+          name: inviterUsers.name,
+        },
+      })
       .from(invitations)
+      .innerJoin(organizations, eq(invitations.organizationId, organizations.id))
+      .leftJoin(inviterUsers, eq(invitations.inviterId, inviterUsers.id))
       .where(eq(invitations.id, invitationId))
       .limit(1);
 
@@ -88,11 +103,15 @@ export const createUsersRepository = (): UsersRepository => ({
     }
 
     return {
-      id: invitation.id,
-      organizationId: invitation.organizationId,
-      email: invitation.email,
-      role: parseInvitationRole(invitation.role ?? null),
-      inviterId: invitation.inviterId,
+      id: invitation.invitation.id,
+      organizationId: invitation.invitation.organizationId,
+      organizationName: invitation.organization.name,
+      email: invitation.invitation.email,
+      role: parseInvitationRole(invitation.invitation.role ?? null),
+      status: invitation.invitation.status,
+      inviterId: invitation.invitation.inviterId,
+      inviterName: invitation.inviter?.name ?? null,
+      expiresAt: invitation.invitation.expiresAt.toISOString(),
     };
   },
 

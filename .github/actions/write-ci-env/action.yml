@@ -18,6 +18,18 @@ inputs:
     description: API base URL exposed to the web app in CI.
     required: false
     default: http://localhost:3001
+  redis-url:
+    description: Synthetic Redis URL to use in generated env files for async verification.
+    required: false
+    default: ''
+  redis-prefix:
+    description: Queue prefix for CI Redis usage.
+    required: false
+    default: acme-platform
+  feature-flags-json:
+    description: Optional JSON override map for server-side feature flags in CI.
+    required: false
+    default: ''
   better-auth-secret:
     description: Synthetic Better Auth secret for CI. Do not pass production runtime secrets here.
     required: false
@@ -41,6 +53,9 @@ runs:
         cat > .env <<EOF
         DATABASE_URL=${{ inputs.database-url }}
         DATABASE_MIGRATION_URL=$migration_url
+        REDIS_URL=${{ inputs.redis-url }}
+        REDIS_PREFIX=${{ inputs.redis-prefix }}
+        FEATURE_FLAGS_JSON=${{ inputs.feature-flags-json }}
         EOF
 
     - name: Write API env
@@ -55,6 +70,9 @@ runs:
         PORT=3001
         DATABASE_URL=${{ inputs.database-url }}
         DATABASE_MIGRATION_URL=$migration_url
+        REDIS_URL=${{ inputs.redis-url }}
+        REDIS_PREFIX=${{ inputs.redis-prefix }}
+        FEATURE_FLAGS_JSON=${{ inputs.feature-flags-json }}
         APP_ORIGIN=${{ inputs.app-origin }}
         API_CORS_ORIGIN=${{ inputs.app-origin }}
         BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}
@@ -81,6 +99,9 @@ runs:
         NEXT_PUBLIC_APP_ENV=development
         NEXT_PUBLIC_API_BASE_URL=${{ inputs.api-base-url }}
         API_UPSTREAM_URL=${{ inputs.api-base-url }}
+        REDIS_URL=${{ inputs.redis-url }}
+        REDIS_PREFIX=${{ inputs.redis-prefix }}
+        FEATURE_FLAGS_JSON=${{ inputs.feature-flags-json }}
         NEXT_PUBLIC_SENTRY_DSN=
         BETTER_AUTH_SECRET=${{ inputs.better-auth-secret }}
         BETTER_AUTH_URL=${{ inputs.app-origin }}

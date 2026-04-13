@@ -46,6 +46,8 @@ export const AuditEventTypeSchema = z.enum([
   'invitation.accepted',
 ]);
 
+export const WebhookEventTypeSchema = AuditEventTypeSchema;
+
 export const AuditActorDtoSchema = z.object({
   userId: z.uuid(),
   name: z.string().nullable(),
@@ -70,6 +72,21 @@ export const AuditLogEntryDtoSchema = z.object({
 
 export const AuditLogListDtoSchema = z.object({
   items: z.array(AuditLogEntryDtoSchema),
+});
+
+export const WebhookEndpointDtoSchema = z.object({
+  id: z.uuid(),
+  organizationId: z.uuid(),
+  url: z.url(),
+  eventTypes: z.array(WebhookEventTypeSchema).min(1),
+  active: z.boolean(),
+  createdBy: z.uuid().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const WebhookEndpointListDtoSchema = z.object({
+  items: z.array(WebhookEndpointDtoSchema),
 });
 
 export const CurrentUserDtoSchema = z.object({
@@ -121,6 +138,14 @@ export const CreateInvitationInputSchema = z.object({
   role: AuthRoleSchema.default('member'),
 });
 
+export const CreateWebhookEndpointInputSchema = z.object({
+  url: z.url(),
+  eventTypes: z
+    .array(WebhookEventTypeSchema)
+    .min(1)
+    .transform((value) => Array.from(new Set(value))),
+});
+
 export const CreateOrganizationInputSchema = z.object({
   name: z.string().trim().min(2).max(120),
   slug: z
@@ -137,6 +162,15 @@ export const CreateOrganizationResultDtoSchema = z.object({
 
 export const CreateInvitationResultDtoSchema = z.object({
   invitationId: z.uuid(),
+});
+
+export const CreateWebhookEndpointResultDtoSchema = z.object({
+  endpoint: WebhookEndpointDtoSchema,
+  secret: z.string().min(1),
+});
+
+export const DeleteWebhookEndpointResultDtoSchema = z.object({
+  endpointId: z.uuid(),
 });
 
 export const AcceptInvitationResultDtoSchema = z.object({
@@ -186,17 +220,23 @@ export type ActiveOrganizationDto = z.infer<typeof ActiveOrganizationDtoSchema>;
 export type OrganizationMemberDto = z.infer<typeof OrganizationMemberDtoSchema>;
 export type PendingInvitationDto = z.infer<typeof PendingInvitationDtoSchema>;
 export type AuditEventType = z.infer<typeof AuditEventTypeSchema>;
+export type WebhookEventType = z.infer<typeof WebhookEventTypeSchema>;
 export type AuditActorDto = z.infer<typeof AuditActorDtoSchema>;
 export type AuditLogEntryDto = z.infer<typeof AuditLogEntryDtoSchema>;
 export type AuditLogListDto = z.infer<typeof AuditLogListDtoSchema>;
+export type WebhookEndpointDto = z.infer<typeof WebhookEndpointDtoSchema>;
+export type WebhookEndpointListDto = z.infer<typeof WebhookEndpointListDtoSchema>;
 export type CurrentUserDto = z.infer<typeof CurrentUserDtoSchema>;
 export type UsersWorkspaceDto = z.infer<typeof UsersWorkspaceDtoSchema>;
 export type SignInInput = z.infer<typeof SignInInputSchema>;
 export type SignUpInput = z.infer<typeof SignUpInputSchema>;
 export type CreateInvitationInput = z.infer<typeof CreateInvitationInputSchema>;
+export type CreateWebhookEndpointInput = z.infer<typeof CreateWebhookEndpointInputSchema>;
 export type CreateOrganizationInput = z.infer<typeof CreateOrganizationInputSchema>;
 export type CreateOrganizationResultDto = z.infer<typeof CreateOrganizationResultDtoSchema>;
 export type CreateInvitationResultDto = z.infer<typeof CreateInvitationResultDtoSchema>;
+export type CreateWebhookEndpointResultDto = z.infer<typeof CreateWebhookEndpointResultDtoSchema>;
+export type DeleteWebhookEndpointResultDto = z.infer<typeof DeleteWebhookEndpointResultDtoSchema>;
 export type AcceptInvitationInput = z.infer<typeof AcceptInvitationInputSchema>;
 export type AcceptInvitationResultDto = z.infer<typeof AcceptInvitationResultDtoSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>;

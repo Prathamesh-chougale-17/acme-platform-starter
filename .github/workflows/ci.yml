@@ -145,3 +145,29 @@ jobs:
         run: git diff --exit-code -- packages/db/src/schema packages/db/drizzle
       - name: Apply migrations to fresh Postgres
         run: pnpm db:migrate
+
+  async-verify:
+    name: async-verify
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo
+      - name: Write CI env files
+        uses: ./.github/actions/write-ci-env
+        with:
+          redis-url: redis://localhost:6379
+      - name: Run async job integration coverage
+        run: pnpm exec vitest run packages/jobs/src/domain-events.test.ts packages/jobs/src/queues.test.ts

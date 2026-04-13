@@ -1,6 +1,8 @@
 import { loadApiEnv } from '@acme/config';
-import type { AuditRepository, UsersRepository } from '@acme/db';
+import type { AuditRepository, UsersRepository, WebhookRepository } from '@acme/db';
 import type {
+  CreateWebhookEndpointResultDto,
+  DeleteWebhookEndpointResultDto,
   ApiResponse,
   AuditLogListDto,
   AuthRole,
@@ -8,6 +10,7 @@ import type {
   CreateOrganizationResultDto,
   CurrentUserDto,
   HealthDto,
+  WebhookEndpointListDto,
   UsersWorkspaceDto,
   AcceptInvitationResultDto,
 } from '@acme/shared';
@@ -120,6 +123,7 @@ import { createApp } from '../app';
 const createRepositories = (): {
   auditRepository: AuditRepository;
   usersRepository: UsersRepository;
+  webhookRepository: WebhookRepository;
 } => {
   const members = [
     {
@@ -175,6 +179,20 @@ const createRepositories = (): {
       },
     ],
   };
+  const webhookEndpoints: WebhookEndpointListDto = {
+    items: [
+      {
+        id: '2d2dbf71-83df-4a9c-9f4e-b525857a7e60',
+        organizationId: baseOrganization.id,
+        url: 'https://example.com/webhooks/acme',
+        eventTypes: ['organization.created', 'invitation.created'],
+        active: true,
+        createdBy: authUser.id,
+        createdAt: new Date('2026-01-02T12:00:00.000Z').toISOString(),
+        updatedAt: new Date('2026-01-02T12:00:00.000Z').toISOString(),
+      },
+    ],
+  };
 
   return {
     usersRepository: {
@@ -183,9 +201,13 @@ const createRepositories = (): {
           ? {
               id: invitations[0]!.id,
               organizationId: invitations[0]!.organizationId,
+              organizationName: baseOrganization.name,
               email: invitations[0]!.email,
               role: invitations[0]!.role,
+              status: invitations[0]!.status,
               inviterId: invitations[0]!.inviterId!,
+              inviterName: authUser.name,
+              expiresAt: invitations[0]!.expiresAt,
             }
           : null,
       ),
@@ -197,12 +219,31 @@ const createRepositories = (): {
       appendAuditLog: vi.fn(async () => undefined),
       listOrganizationAuditLogs: vi.fn(async () => auditLogs),
     },
+    webhookRepository: {
+      listOrganizationWebhookEndpoints: vi.fn(async () => webhookEndpoints),
+      createWebhookEndpoint: vi.fn(async (input) => ({
+        id: '5fb74f26-86a4-4427-a09c-229d638d7d5d',
+        organizationId: input.organizationId,
+        url: input.url,
+        eventTypes: input.eventTypes,
+        active: true,
+        createdBy: input.createdBy ?? null,
+        createdAt: new Date('2026-01-02T12:00:00.000Z').toISOString(),
+        updatedAt: new Date('2026-01-02T12:00:00.000Z').toISOString(),
+      })),
+      deleteWebhookEndpoint: vi.fn(async () => true),
+      createWebhookDeliveriesForEvent: vi.fn(async () => []),
+      findWebhookDeliveryById: vi.fn(async () => null),
+      markWebhookDeliverySuccess: vi.fn(async () => undefined),
+      markWebhookDeliveryFailure: vi.fn(async () => undefined),
+    },
   };
 };
 
 const createTestApp = (repositories: {
   auditRepository: AuditRepository;
   usersRepository: UsersRepository;
+  webhookRepository: WebhookRepository;
 }) =>
   createApp({
     env: loadApiEnv({
@@ -210,12 +251,14 @@ const createTestApp = (repositories: {
     }),
     auditRepository: repositories.auditRepository,
     usersRepository: repositories.usersRepository,
+    webhookRepository: repositories.webhookRepository,
   });
 
 describe('api routes', () => {
   let repositories: {
     auditRepository: AuditRepository;
     usersRepository: UsersRepository;
+    webhookRepository: WebhookRepository;
   };
 
   beforeEach(() => {
@@ -471,6 +514,76 @@ describe('api routes', () => {
     );
   });
 
+  it('lists webhook endpoints for owners and admins', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/webhooks', {
+      headers: {
+        cookie: 'session=valid',
+      },
+    });
+    const body = (await response.json()) as ApiResponse<WebhookEndpointListDto>;
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful webhook list response');
+    }
+    expect(body.data.items).toHaveLength(1);
+    expect(repositories.webhookRepository.listOrganizationWebhookEndpoints).toHaveBeenCalledWith(
+      baseOrganization.id,
+    );
+  });
+
+  it('creates webhook endpoints and returns the signing secret once', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/webhooks', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: 'session=valid',
+      },
+      body: JSON.stringify({
+        url: 'https://example.com/webhooks/acme',
+        eventTypes: ['organization.created', 'invitation.created'],
+      }),
+    });
+    const body = (await response.json()) as ApiResponse<CreateWebhookEndpointResultDto>;
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful webhook create response');
+    }
+    expect(body.data.endpoint.url).toBe('https://example.com/webhooks/acme');
+    expect(body.data.secret).toMatch(/^acme_whsec_/);
+    expect(repositories.webhookRepository.createWebhookEndpoint).toHaveBeenCalledTimes(1);
+  });
+
+  it('deletes webhook endpoints for owners and admins', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/webhooks/2d2dbf71-83df-4a9c-9f4e-b525857a7e60', {
+      method: 'DELETE',
+      headers: {
+        cookie: 'session=valid',
+      },
+    });
+    const body = (await response.json()) as ApiResponse<DeleteWebhookEndpointResultDto>;
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful webhook delete response');
+    }
+    expect(body.data.endpointId).toBe('2d2dbf71-83df-4a9c-9f4e-b525857a7e60');
+    expect(repositories.webhookRepository.deleteWebhookEndpoint).toHaveBeenCalledWith(
+      baseOrganization.id,
+      '2d2dbf71-83df-4a9c-9f4e-b525857a7e60',
+    );
+  });
+
   it('hides invitation data for member-only workspaces', async () => {
     currentAuthContext = {
       ...authContext,
@@ -528,6 +641,24 @@ describe('api routes', () => {
 
     const app = createTestApp(repositories);
     const response = await app.request('/api/v1/audit-logs?limit=25', {
+      headers: {
+        cookie: 'session=valid',
+      },
+    });
+    const body = (await response.json()) as ApiResponse<never>;
+
+    expect(response.status).toBe(403);
+    expect(body.success).toBe(false);
+  });
+
+  it('rejects webhook access for member workspaces', async () => {
+    currentAuthContext = {
+      ...authContext,
+      role: 'member',
+    };
+
+    const app = createTestApp(repositories);
+    const response = await app.request('/api/v1/webhooks', {
       headers: {
         cookie: 'session=valid',
       },
