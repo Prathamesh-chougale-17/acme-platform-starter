@@ -6,6 +6,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { SignUpInputSchema } from '@acme/shared';
 import { Button, Input } from '@acme/ui';
 
+import { apiClient } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
 
 const slugify = (value: string) =>
@@ -64,17 +65,12 @@ export function SignUpForm({
             }
 
             if (!invitationId) {
-              const organizationResponse = (await authClient.organization.create({
-                name: payload.organizationName,
-                slug: payload.organizationSlug,
-              })) as {
-                error?: {
-                  message?: string;
-                } | null;
-              };
-              const organizationError = organizationResponse.error;
-
-              if (organizationError) {
+              try {
+                await apiClient.createOrganization({
+                  name: payload.organizationName,
+                  slug: payload.organizationSlug,
+                });
+              } catch {
                 setNotice(
                   'Your account was created, but organization provisioning needs one more retry. Continue to the workspace to finish setup.',
                 );

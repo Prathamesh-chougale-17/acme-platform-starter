@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from 'react';
 
 import { Button } from '@acme/ui';
 
+import { apiClient } from '@/lib/api-client';
 import { authClient } from '@/lib/auth-client';
 
 const getErrorMessage = (error: unknown) =>
@@ -119,20 +120,7 @@ export function AcceptInvitePanel({
           setError(null);
           startTransition(async () => {
             try {
-              const response = (await authClient.organization.acceptInvitation({
-                invitationId,
-              })) as {
-                error?: {
-                  message?: string;
-                } | null;
-              };
-              const acceptError = response.error;
-
-              if (acceptError) {
-                setError(acceptError.message ?? 'Unable to accept the invitation.');
-                return;
-              }
-
+              await apiClient.acceptInvitation(invitationId);
               router.push('/users' as never);
               router.refresh();
             } catch (caughtError) {

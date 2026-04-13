@@ -1,6 +1,15 @@
 import { auth, canManageMembers, type ResolvedAuthContext } from '@acme/auth';
-import type { UsersRepository } from '@acme/db';
-import type { CreateInvitationInput, CurrentUserDto, UsersWorkspaceDto } from '@acme/shared';
+import type { AuditRepository, UsersRepository } from '@acme/db';
+import type {
+  AuditLogListDto,
+  CreateInvitationInput,
+  CreateInvitationResultDto,
+  CreateOrganizationInput,
+  CreateOrganizationResultDto,
+  CurrentUserDto,
+  UsersWorkspaceDto,
+  AcceptInvitationResultDto,
+} from '@acme/shared';
 
 import { AppError } from '../lib/http';
 
@@ -43,8 +52,47 @@ const isBetterAuthConflict = (
   );
 };
 
+const getBetterAuthError = (
+  error: unknown,
+):
+  | {
+      statusCode: number;
+      message: string;
+    }
+  | undefined => {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+
+  const candidate = error as {
+    statusCode?: number;
+    message?: string;
+    body?: {
+      message?: string;
+    };
+  };
+
+  if (typeof candidate.statusCode !== 'number') {
+    return undefined;
+  }
+
+  return {
+    statusCode: candidate.statusCode,
+    message:
+      candidate.body?.message ??
+      candidate.message ??
+      'The authentication service rejected the request.',
+  };
+};
+
 const toIsoString = (value: Date | string): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+
+type AuditRequestMetadata = {
+  requestId?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+};
 
 const toCurrentUserDto = (authContext: ResolvedAuthContext): CurrentUserDto => ({
   user: {
@@ -61,7 +109,10 @@ const toCurrentUserDto = (authContext: ResolvedAuthContext): CurrentUserDto => (
 });
 
 export class UserService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly auditRepository: AuditRepository,
+  ) {}
 
   getCurrentUser(authContext: ResolvedAuthContext): CurrentUserDto {
     return toCurrentUserDto(authContext);
@@ -94,7 +145,8 @@ export class UserService {
     authContext: ResolvedAuthContext,
     requestHeaders: Headers,
     input: CreateInvitationInput,
-  ): Promise<{ invitationId: string }> {
+    auditRequestMetadata: AuditRequestMetadata,
+  ): Promise<CreateInvitationResultDto> {
     if (!authContext.organizationId) {
       throw new AppError(403, 'FORBIDDEN', 'An active organization is required to invite members');
     }
@@ -114,6 +166,21 @@ export class UserService {
           organizationId: authContext.organizationId,
         },
         headers: requestHeaders,
+      });
+
+      await this.auditRepository.appendAuditLog({
+        organizationId: authContext.organizationId,
+        eventType: 'invitation.created',
+        actorUserId: authContext.user.id,
+        actorRole: authContext.role,
+        targetEmail: input.email,
+        targetInvitationId: invitation.id,
+        requestId: auditRequestMetadata.requestId ?? null,
+        ipAddress: auditRequestMetadata.ipAddress ?? null,
+        userAgent: auditRequestMetadata.userAgent ?? null,
+        metadata: {
+          invitedRole: input.role,
+        },
       });
 
       return {
@@ -137,5 +204,152 @@ export class UserService {
 
       throw error;
     }
+  }
+
+  async createOrganization(
+    authContext: ResolvedAuthContext,
+    requestHeaders: Headers,
+    input: CreateOrganizationInput,
+    auditRequestMetadata: AuditRequestMetadata,
+  ): Promise<CreateOrganizationResultDto> {
+    try {
+      const organization = await auth.api.createOrganization({
+        body: input,
+        headers: requestHeaders,
+      });
+
+      if (!organization || typeof organization !== 'object' || !('id' in organization)) {
+        throw new AppError(
+          500,
+          'INTERNAL_ERROR',
+          'Organization provisioning completed without a valid response payload',
+        );
+      }
+
+      const organizationId = organization.id;
+
+      if (typeof organizationId !== 'string') {
+        throw new AppError(
+          500,
+          'INTERNAL_ERROR',
+          'Organization provisioning completed without a valid organization id',
+        );
+      }
+
+      await this.auditRepository.appendAuditLog({
+        organizationId,
+        eventType: 'organization.created',
+        actorUserId: authContext.user.id,
+        actorRole: 'owner',
+        requestId: auditRequestMetadata.requestId ?? null,
+        ipAddress: auditRequestMetadata.ipAddress ?? null,
+        userAgent: auditRequestMetadata.userAgent ?? null,
+        metadata: {
+          organizationName: input.name,
+          organizationSlug: input.slug,
+        },
+      });
+
+      return {
+        organizationId,
+      };
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new AppError(
+          409,
+          'CONFLICT',
+          'An organization with that slug already exists. Choose a different slug.',
+        );
+      }
+
+      const betterAuthError = getBetterAuthError(error);
+
+      if (
+        betterAuthError &&
+        (betterAuthError.statusCode === 400 || betterAuthError.statusCode === 409)
+      ) {
+        throw new AppError(
+          betterAuthError.statusCode === 409 ? 409 : 400,
+          betterAuthError.statusCode === 409 ? 'CONFLICT' : 'BAD_REQUEST',
+          betterAuthError.message,
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async acceptInvitation(
+    authContext: ResolvedAuthContext,
+    requestHeaders: Headers,
+    invitationId: string,
+    auditRequestMetadata: AuditRequestMetadata,
+  ): Promise<AcceptInvitationResultDto> {
+    const invitation = await this.usersRepository.findInvitationById(invitationId);
+
+    if (!invitation) {
+      throw new AppError(404, 'NOT_FOUND', 'Invitation not found');
+    }
+
+    try {
+      await auth.api.acceptInvitation({
+        body: {
+          invitationId,
+        },
+        headers: requestHeaders,
+      });
+
+      await this.auditRepository.appendAuditLog({
+        organizationId: invitation.organizationId,
+        eventType: 'invitation.accepted',
+        actorUserId: authContext.user.id,
+        actorRole: invitation.role,
+        targetUserId: authContext.user.id,
+        targetEmail: invitation.email,
+        targetInvitationId: invitation.id,
+        requestId: auditRequestMetadata.requestId ?? null,
+        ipAddress: auditRequestMetadata.ipAddress ?? null,
+        userAgent: auditRequestMetadata.userAgent ?? null,
+        metadata: {
+          invitedRole: invitation.role,
+        },
+      });
+
+      return {
+        invitationId: invitation.id,
+        organizationId: invitation.organizationId,
+      };
+    } catch (error) {
+      const betterAuthError = getBetterAuthError(error);
+
+      if (
+        betterAuthError &&
+        (betterAuthError.statusCode === 400 || betterAuthError.statusCode === 409)
+      ) {
+        throw new AppError(
+          betterAuthError.statusCode === 409 ? 409 : 400,
+          betterAuthError.statusCode === 409 ? 'CONFLICT' : 'BAD_REQUEST',
+          betterAuthError.message,
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async getAuditLogs(authContext: ResolvedAuthContext, limit: number): Promise<AuditLogListDto> {
+    if (!authContext.organizationId) {
+      throw new AppError(403, 'FORBIDDEN', 'An active organization is required to view audit logs');
+    }
+
+    if (!canManageMembers(authContext.role)) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'Only owners and admins can access organization audit activity',
+      );
+    }
+
+    return this.auditRepository.listOrganizationAuditLogs(authContext.organizationId, limit);
   }
 }

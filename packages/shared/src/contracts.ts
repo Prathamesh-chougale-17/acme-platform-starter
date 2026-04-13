@@ -40,6 +40,38 @@ export const PendingInvitationDtoSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+export const AuditEventTypeSchema = z.enum([
+  'organization.created',
+  'invitation.created',
+  'invitation.accepted',
+]);
+
+export const AuditActorDtoSchema = z.object({
+  userId: z.uuid(),
+  name: z.string().nullable(),
+  email: z.string().email(),
+  role: AuthRoleSchema.nullable(),
+});
+
+export const AuditLogEntryDtoSchema = z.object({
+  id: z.uuid(),
+  organizationId: z.uuid(),
+  eventType: AuditEventTypeSchema,
+  actor: AuditActorDtoSchema.nullable(),
+  targetUserId: z.uuid().nullable(),
+  targetEmail: z.string().email().nullable(),
+  targetInvitationId: z.uuid().nullable(),
+  requestId: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable().default({}),
+  createdAt: z.iso.datetime(),
+});
+
+export const AuditLogListDtoSchema = z.object({
+  items: z.array(AuditLogEntryDtoSchema),
+});
+
 export const CurrentUserDtoSchema = z.object({
   user: UserDtoSchema,
   organization: ActiveOrganizationDtoSchema.nullable(),
@@ -89,6 +121,29 @@ export const CreateInvitationInputSchema = z.object({
   role: AuthRoleSchema.default('member'),
 });
 
+export const CreateOrganizationInputSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Organization slug must be kebab-case'),
+});
+
+export const CreateOrganizationResultDtoSchema = z.object({
+  organizationId: z.uuid(),
+});
+
+export const CreateInvitationResultDtoSchema = z.object({
+  invitationId: z.uuid(),
+});
+
+export const AcceptInvitationResultDtoSchema = z.object({
+  invitationId: z.uuid(),
+  organizationId: z.uuid(),
+});
+
 export const AcceptInvitationInputSchema = z.object({
   invitationId: z.uuid(),
 });
@@ -130,12 +185,20 @@ export type AuthRole = z.infer<typeof AuthRoleSchema>;
 export type ActiveOrganizationDto = z.infer<typeof ActiveOrganizationDtoSchema>;
 export type OrganizationMemberDto = z.infer<typeof OrganizationMemberDtoSchema>;
 export type PendingInvitationDto = z.infer<typeof PendingInvitationDtoSchema>;
+export type AuditEventType = z.infer<typeof AuditEventTypeSchema>;
+export type AuditActorDto = z.infer<typeof AuditActorDtoSchema>;
+export type AuditLogEntryDto = z.infer<typeof AuditLogEntryDtoSchema>;
+export type AuditLogListDto = z.infer<typeof AuditLogListDtoSchema>;
 export type CurrentUserDto = z.infer<typeof CurrentUserDtoSchema>;
 export type UsersWorkspaceDto = z.infer<typeof UsersWorkspaceDtoSchema>;
 export type SignInInput = z.infer<typeof SignInInputSchema>;
 export type SignUpInput = z.infer<typeof SignUpInputSchema>;
 export type CreateInvitationInput = z.infer<typeof CreateInvitationInputSchema>;
+export type CreateOrganizationInput = z.infer<typeof CreateOrganizationInputSchema>;
+export type CreateOrganizationResultDto = z.infer<typeof CreateOrganizationResultDtoSchema>;
+export type CreateInvitationResultDto = z.infer<typeof CreateInvitationResultDtoSchema>;
 export type AcceptInvitationInput = z.infer<typeof AcceptInvitationInputSchema>;
+export type AcceptInvitationResultDto = z.infer<typeof AcceptInvitationResultDtoSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordInputSchema>;
 export type HealthDto = z.infer<typeof HealthDtoSchema>;

@@ -1,6 +1,6 @@
 import { desc, eq, sql } from 'drizzle-orm';
 
-import type { OrganizationMemberDto, PendingInvitationDto, UserDto } from '@acme/shared';
+import type { AuthRole, OrganizationMemberDto, PendingInvitationDto, UserDto } from '@acme/shared';
 
 import { getDb } from '../client';
 import { invitations, members, users } from '../schema';
@@ -8,8 +8,17 @@ import { invitations, members, users } from '../schema';
 export interface UsersRepository {
   listOrganizationMembers(organizationId: string): Promise<OrganizationMemberDto[]>;
   listPendingInvitations(organizationId: string): Promise<PendingInvitationDto[]>;
+  findInvitationById(invitationId: string): Promise<InvitationAuditTarget | null>;
   ping(): Promise<boolean>;
 }
+
+export type InvitationAuditTarget = {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: AuthRole;
+  inviterId: string;
+};
 
 const toUserDto = (record: typeof users.$inferSelect): UserDto => ({
   id: record.id,
@@ -64,6 +73,27 @@ export const createUsersRepository = (): UsersRepository => ({
       inviterId: invitation.inviterId,
       createdAt: invitation.createdAt.toISOString(),
     }));
+  },
+
+  async findInvitationById(invitationId) {
+    const database = getDb();
+    const [invitation] = await database
+      .select()
+      .from(invitations)
+      .where(eq(invitations.id, invitationId))
+      .limit(1);
+
+    if (!invitation) {
+      return null;
+    }
+
+    return {
+      id: invitation.id,
+      organizationId: invitation.organizationId,
+      email: invitation.email,
+      role: parseInvitationRole(invitation.role ?? null),
+      inviterId: invitation.inviterId,
+    };
   },
 
   async ping() {

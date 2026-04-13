@@ -1,8 +1,20 @@
 import {
+  AcceptInvitationResultDtoSchema,
+  AuditLogListDtoSchema,
+  CreateInvitationInputSchema,
+  CreateInvitationResultDtoSchema,
+  CreateOrganizationInputSchema,
+  CreateOrganizationResultDtoSchema,
   CurrentUserDtoSchema,
   HealthDtoSchema,
   UsersWorkspaceDtoSchema,
+  type AcceptInvitationResultDto,
+  type AuditLogListDto,
   type ApiResponse,
+  type CreateInvitationInput,
+  type CreateInvitationResultDto,
+  type CreateOrganizationInput,
+  type CreateOrganizationResultDto,
   type CurrentUserDto,
   type HealthDto,
   type UsersWorkspaceDto,
@@ -98,4 +110,39 @@ export const apiClient = {
   getMe: () => request<CurrentUserDto>('/api/v1/me', { method: 'GET' }, CurrentUserDtoSchema),
   getUsersWorkspace: () =>
     request<UsersWorkspaceDto>('/api/v1/users', { method: 'GET' }, UsersWorkspaceDtoSchema),
+  getAuditLogs: (limit = 25) =>
+    request<AuditLogListDto>(
+      `/api/v1/audit-logs?limit=${encodeURIComponent(String(limit))}`,
+      { method: 'GET' },
+      AuditLogListDtoSchema,
+    ),
+  createOrganization: (input: CreateOrganizationInput) =>
+    request<CreateOrganizationResultDto>(
+      '/api/v1/organizations',
+      {
+        method: 'POST',
+        body: JSON.stringify(CreateOrganizationInputSchema.parse(input)),
+      },
+      CreateOrganizationResultDtoSchema,
+    ),
+  createInvitation: (input: CreateInvitationInput) =>
+    request<CreateInvitationResultDto>(
+      '/api/v1/invitations',
+      {
+        method: 'POST',
+        body: JSON.stringify(CreateInvitationInputSchema.parse(input)),
+      },
+      CreateInvitationResultDtoSchema,
+      {
+        timeoutMs: 20_000,
+      },
+    ),
+  acceptInvitation: (invitationId: string) =>
+    request<AcceptInvitationResultDto>(
+      `/api/v1/invitations/${encodeURIComponent(invitationId)}/accept`,
+      {
+        method: 'POST',
+      },
+      AcceptInvitationResultDtoSchema,
+    ),
 };

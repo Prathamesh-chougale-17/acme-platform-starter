@@ -1,4 +1,9 @@
-import { createUsersRepository, type UsersRepository } from '@acme/db';
+import {
+  createAuditRepository,
+  createUsersRepository,
+  type AuditRepository,
+  type UsersRepository,
+} from '@acme/db';
 import { loadApiEnv, type ApiEnv } from '@acme/config';
 import { createLogger } from '@acme/logger';
 import { APP_VERSION, API_V1_PREFIX } from '@acme/shared';
@@ -33,6 +38,7 @@ const initSentry = (env: ApiEnv): void => {
 export type CreateAppOptions = {
   env?: ApiEnv;
   usersRepository?: UsersRepository;
+  auditRepository?: AuditRepository;
 };
 
 export const createApp = (options: CreateAppOptions = {}) => {
@@ -49,7 +55,8 @@ export const createApp = (options: CreateAppOptions = {}) => {
   initSentry(env);
 
   const usersRepository = options.usersRepository ?? createUsersRepository();
-  const userService = new UserService(usersRepository);
+  const auditRepository = options.auditRepository ?? createAuditRepository();
+  const userService = new UserService(usersRepository, auditRepository);
   const healthService = new HealthService(usersRepository, env);
 
   const app = new Hono<AppContext>();

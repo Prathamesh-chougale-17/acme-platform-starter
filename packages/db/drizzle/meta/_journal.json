@@ -15,6 +15,13 @@
       "when": 1775990536065,
       "tag": "0001_puzzling_cerise",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776090071342,
+      "tag": "0002_third_living_lightning",
+      "breakpoints": true
     }
   ]
 }

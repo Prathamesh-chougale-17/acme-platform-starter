@@ -27,10 +27,15 @@ import {
   Separator,
   Skeleton,
 } from '@acme/ui';
-import type { AuthRole, CreateInvitationInput, CurrentUserDto } from '@acme/shared';
+import type {
+  AuditLogEntryDto,
+  AuthRole,
+  CreateInvitationInput,
+  CurrentUserDto,
+} from '@acme/shared';
 
-import { authClient } from '@/lib/auth-client';
-import { useUsersWorkspaceQuery } from '@/lib/queries';
+import { apiClient } from '@/lib/api-client';
+import { useAuditLogsQuery, useUsersWorkspaceQuery } from '@/lib/queries';
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to complete the request';
@@ -60,6 +65,31 @@ const memberRoleVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
 const canManageMembers = (role: AuthRole | null | undefined) =>
   role === 'owner' || role === 'admin';
 
+const getActorLabel = (entry: AuditLogEntryDto) =>
+  entry.actor?.name ?? entry.actor?.email ?? entry.targetEmail ?? 'A teammate';
+
+const getAuditSummary = (entry: AuditLogEntryDto) => {
+  const invitedRole =
+    entry.metadata && typeof entry.metadata.invitedRole === 'string'
+      ? entry.metadata.invitedRole
+      : 'member';
+  const organizationName =
+    entry.metadata && typeof entry.metadata.organizationName === 'string'
+      ? entry.metadata.organizationName
+      : 'this organization';
+
+  switch (entry.eventType) {
+    case 'organization.created':
+      return `${getActorLabel(entry)} created ${organizationName}.`;
+    case 'invitation.created':
+      return `${getActorLabel(entry)} invited ${entry.targetEmail ?? 'a teammate'} as ${invitedRole}.`;
+    case 'invitation.accepted':
+      return `${getActorLabel(entry)} accepted the invitation as ${invitedRole}.`;
+    default:
+      return `${getActorLabel(entry)} completed an organization change.`;
+  }
+};
+
 export function UsersWorkspace({
   viewer,
   deniedRoute,
@@ -84,6 +114,10 @@ export function UsersWorkspace({
   const members = workspace?.members ?? [];
   const invitations = workspace?.invitations ?? [];
   const canInviteMembers = canManageMembers(effectiveViewer.role);
+  const auditLogsQuery = useAuditLogsQuery(
+    25,
+    Boolean(effectiveViewer.organization?.id && canInviteMembers),
+  );
   const errorMessage = workspaceQuery.isError ? getErrorMessage(workspaceQuery.error) : null;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -94,25 +128,11 @@ export function UsersWorkspace({
 
     try {
       setIsInviting(true);
-      const invitationResponse = (await authClient.organization.inviteMember({
-        email: submittedInvite.email,
-        role: submittedInvite.role,
-        organizationId: effectiveViewer.organization?.id,
-        resend: true,
-      })) as {
-        error?: {
-          message?: string;
-        } | null;
-      };
-
-      if (invitationResponse.error) {
-        setSetupError(invitationResponse.error.message ?? 'Unable to send invitation');
-        return;
-      }
+      await apiClient.createInvitation(submittedInvite);
 
       setInviteForm({ email: '', role: 'member' });
       setNotice(`Invitation queued for ${submittedInvite.email}`);
-      await workspaceQuery.refetch();
+      await Promise.all([workspaceQuery.refetch(), auditLogsQuery.refetch()]);
     } catch (error) {
       setSetupError(getErrorMessage(error));
     } finally {
@@ -148,29 +168,22 @@ export function UsersWorkspace({
                 event.preventDefault();
                 setSetupError(null);
                 startProvisioning(async () => {
-                  const slug = slugify(organizationName);
+                  try {
+                    const slug = slugify(organizationName);
 
-                  if (!slug) {
-                    setSetupError('Please choose an organization name.');
-                    return;
+                    if (!slug) {
+                      setSetupError('Please choose an organization name.');
+                      return;
+                    }
+
+                    await apiClient.createOrganization({
+                      name: organizationName,
+                      slug,
+                    });
+                    router.refresh();
+                  } catch (error) {
+                    setSetupError(getErrorMessage(error));
                   }
-
-                  const organizationResponse = (await authClient.organization.create({
-                    name: organizationName,
-                    slug,
-                  })) as {
-                    error?: {
-                      message?: string;
-                    } | null;
-                  };
-                  const error = organizationResponse.error;
-
-                  if (error) {
-                    setSetupError(error.message ?? 'Unable to create the organization.');
-                    return;
-                  }
-
-                  router.refresh();
                 });
               }}
             >
@@ -303,7 +316,15 @@ export function UsersWorkspace({
           <CardHeader>
             <CardTitle>Members</CardTitle>
             <CardAction>
-              <Button variant="secondary" onClick={() => void workspaceQuery.refetch()}>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  void Promise.all([
+                    workspaceQuery.refetch(),
+                    canInviteMembers ? auditLogsQuery.refetch() : Promise.resolve(),
+                  ])
+                }
+              >
                 {workspaceQuery.isFetching && !workspaceQuery.isPending
                   ? 'Refreshing...'
                   : 'Refresh'}
@@ -403,6 +424,56 @@ export function UsersWorkspace({
             )}
           </CardContent>
         </Card>
+
+        {canInviteMembers ? (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Audit activity</CardTitle>
+              <CardDescription>
+                Successful organization access changes are written to the database-backed audit log.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {auditLogsQuery.isPending ? (
+                <>
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} className="h-16 w-full" />
+                  ))}
+                </>
+              ) : auditLogsQuery.isError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Unable to load audit activity</AlertTitle>
+                  <AlertDescription>{getErrorMessage(auditLogsQuery.error)}</AlertDescription>
+                </Alert>
+              ) : auditLogsQuery.data?.items.length ? (
+                <>
+                  {auditLogsQuery.data.items.map((entry, index) => (
+                    <div key={entry.id} className="flex flex-col gap-3">
+                      <div className="rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-semibold text-white">{getAuditSummary(entry)}</p>
+                          <Badge variant="outline">{entry.eventType}</Badge>
+                        </div>
+                        <p className="mt-2 text-muted-foreground">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {index < auditLogsQuery.data.items.length - 1 ? <Separator /> : null}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <Alert>
+                  <AlertTitle>No audit activity yet</AlertTitle>
+                  <AlertDescription>
+                    New organization creation and invitation activity will appear here after the
+                    next successful change.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );
