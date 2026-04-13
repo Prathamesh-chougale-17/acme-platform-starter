@@ -127,7 +127,7 @@ export const apiClient = {
     ),
   createInvitation: (input: CreateInvitationInput) =>
     request<CreateInvitationResultDto>(
-      '/api/v1/invitations',
+      '/api/invitations',
       {
         method: 'POST',
         body: JSON.stringify(CreateInvitationInputSchema.parse(input)),
