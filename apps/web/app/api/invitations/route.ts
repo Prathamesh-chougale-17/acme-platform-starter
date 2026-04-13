@@ -1,6 +1,11 @@
 import { auth, canManageMembers, requireRole } from '@acme/auth';
 import { createAuditRepository } from '@acme/db';
-import { CreateInvitationInputSchema, success, failure, type CreateInvitationResultDto } from '@acme/shared';
+import {
+  CreateInvitationInputSchema,
+  success,
+  failure,
+  type CreateInvitationResultDto,
+} from '@acme/shared';
 
 const auditRepository = createAuditRepository();
 
