@@ -38,7 +38,9 @@ const isBetterAuthConflict = (
   const normalizedMessage = candidate.message?.toLowerCase();
   const normalizedBodyMessage = candidate.body?.message?.toLowerCase();
 
-  return Boolean(normalizedMessage && normalizedBodyMessage && normalizedMessage.includes(normalizedBodyMessage));
+  return Boolean(
+    normalizedMessage && normalizedBodyMessage && normalizedMessage.includes(normalizedBodyMessage),
+  );
 };
 
 const toIsoString = (value: Date | string): string =>

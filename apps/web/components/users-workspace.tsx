@@ -270,11 +270,7 @@ export function UsersWorkspace({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isInviting}
-                  >
+                  <Button type="submit" className="w-full" disabled={isInviting}>
                     {isInviting ? 'Sending invitation...' : 'Send invitation'}
                   </Button>
                 </form>
@@ -284,7 +280,7 @@ export function UsersWorkspace({
                     <AlertDescription>{notice}</AlertDescription>
                   </Alert>
                 ) : null}
-                {setupError ?? errorMessage ? (
+                {(setupError ?? errorMessage) ? (
                   <Alert variant="destructive">
                     <AlertTitle>Unable to send invitation</AlertTitle>
                     <AlertDescription>{setupError ?? errorMessage}</AlertDescription>

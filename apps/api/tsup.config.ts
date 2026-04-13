@@ -10,13 +10,7 @@ export default defineConfig({
   outDir: 'dist',
   bundle: true,
   noExternal: [/^@acme\//],
-  external: [
-    'hono',
-    '@hono/node-server',
-    '@hono/zod-validator',
-    '@sentry/node',
-    'prom-client',
-  ],
+  external: ['hono', '@hono/node-server', '@hono/zod-validator', '@sentry/node', 'prom-client'],
   outExtension: () => ({
     js: '.cjs',
   }),

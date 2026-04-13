@@ -41,7 +41,11 @@ type AuthMailerDependencies = {
   smtpClient?: SmtpClient;
 };
 
-type LookupCallback = (error: NodeJS.ErrnoException | null, address: string, family: number) => void;
+type LookupCallback = (
+  error: NodeJS.ErrnoException | null,
+  address: string,
+  family: number,
+) => void;
 type LookupOptions = {
   family?: number;
   hints?: number;
