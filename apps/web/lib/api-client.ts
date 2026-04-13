@@ -1,15 +1,12 @@
 import {
-  CreateInvitationInputSchema,
   CurrentUserDtoSchema,
   HealthDtoSchema,
   UsersWorkspaceDtoSchema,
   type ApiResponse,
-  type CreateInvitationInput,
   type CurrentUserDto,
   type HealthDto,
   type UsersWorkspaceDto,
 } from '@acme/shared';
-import { z } from 'zod';
 
 export class ApiClientError extends Error {
   constructor(
@@ -23,7 +20,6 @@ export class ApiClientError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 8_000;
-const INVITATION_REQUEST_TIMEOUT_MS = 20_000;
 
 const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
   const text = await response.text();
@@ -42,7 +38,7 @@ const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown
 const request = async <T>(
   path: string,
   init: RequestInit,
-  schema: z.ZodType<T>,
+  schema: { parse(data: unknown): T },
   options?: {
     timeoutMs?: number;
     timeoutMessage?: string;
@@ -102,20 +98,4 @@ export const apiClient = {
   getMe: () => request<CurrentUserDto>('/api/v1/me', { method: 'GET' }, CurrentUserDtoSchema),
   getUsersWorkspace: () =>
     request<UsersWorkspaceDto>('/api/v1/users', { method: 'GET' }, UsersWorkspaceDtoSchema),
-  createInvitation: (input: CreateInvitationInput) =>
-    request(
-      '/api/v1/invitations',
-      {
-        method: 'POST',
-        body: JSON.stringify(CreateInvitationInputSchema.parse(input)),
-      },
-      z.object({
-        invitationId: z.uuid(),
-      }),
-      {
-        timeoutMs: INVITATION_REQUEST_TIMEOUT_MS,
-        timeoutMessage:
-          'Invitation delivery is taking longer than expected. We will check whether the invite was still created before showing an error.',
-      },
-    ),
 };

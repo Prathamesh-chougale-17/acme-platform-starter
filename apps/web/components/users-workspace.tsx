@@ -30,8 +30,7 @@ import {
 import type { AuthRole, CreateInvitationInput, CurrentUserDto } from '@acme/shared';
 
 import { authClient } from '@/lib/auth-client';
-import { ApiClientError } from '@/lib/api-client';
-import { useCreateInvitationMutation, useUsersWorkspaceQuery } from '@/lib/queries';
+import { useUsersWorkspaceQuery } from '@/lib/queries';
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to complete the request';
@@ -77,43 +76,47 @@ export function UsersWorkspace({
   const [notice, setNotice] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [isProvisioning, startProvisioning] = useTransition();
+  const [isInviting, setIsInviting] = useState(false);
   const workspaceQuery = useUsersWorkspaceQuery();
-  const createInvitationMutation = useCreateInvitationMutation();
 
   const workspace = workspaceQuery.data;
   const effectiveViewer = workspace?.viewer ?? viewer;
   const members = workspace?.members ?? [];
   const invitations = workspace?.invitations ?? [];
   const canInviteMembers = canManageMembers(effectiveViewer.role);
-  const errorMessage = createInvitationMutation.isError
-    ? getErrorMessage(createInvitationMutation.error)
-    : workspaceQuery.isError
-      ? getErrorMessage(workspaceQuery.error)
-      : null;
+  const errorMessage = workspaceQuery.isError ? getErrorMessage(workspaceQuery.error) : null;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNotice(null);
+    setSetupError(null);
     const submittedInvite = { ...inviteForm };
 
     try {
-      await createInvitationMutation.mutateAsync(submittedInvite);
+      setIsInviting(true);
+      const invitationResponse = (await authClient.organization.inviteMember({
+        email: submittedInvite.email,
+        role: submittedInvite.role,
+        organizationId: effectiveViewer.organization?.id,
+        resend: true,
+      })) as {
+        error?: {
+          message?: string;
+        } | null;
+      };
+
+      if (invitationResponse.error) {
+        setSetupError(invitationResponse.error.message ?? 'Unable to send invitation');
+        return;
+      }
+
       setInviteForm({ email: '', role: 'member' });
       setNotice(`Invitation queued for ${submittedInvite.email}`);
+      await workspaceQuery.refetch();
     } catch (error) {
-      if (error instanceof ApiClientError && error.code === 'REQUEST_TIMEOUT') {
-        const refreshedWorkspace = await workspaceQuery.refetch();
-        const invitationWasCreated = refreshedWorkspace.data?.invitations.some(
-          (invitation) => invitation.email === submittedInvite.email,
-        );
-
-        if (invitationWasCreated) {
-          setInviteForm({ email: '', role: 'member' });
-          setNotice(
-            `Invitation queued for ${submittedInvite.email}. Delivery took longer than the browser wait, but the pending invite was created successfully.`,
-          );
-        }
-      }
+      setSetupError(getErrorMessage(error));
+    } finally {
+      setIsInviting(false);
     }
   };
 
@@ -270,11 +273,9 @@ export function UsersWorkspace({
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={createInvitationMutation.isPending}
+                    disabled={isInviting}
                   >
-                    {createInvitationMutation.isPending
-                      ? 'Sending invitation...'
-                      : 'Send invitation'}
+                    {isInviting ? 'Sending invitation...' : 'Send invitation'}
                   </Button>
                 </form>
                 {notice ? (
@@ -283,10 +284,10 @@ export function UsersWorkspace({
                     <AlertDescription>{notice}</AlertDescription>
                   </Alert>
                 ) : null}
-                {errorMessage ? (
+                {setupError ?? errorMessage ? (
                   <Alert variant="destructive">
                     <AlertTitle>Unable to send invitation</AlertTitle>
-                    <AlertDescription>{errorMessage}</AlertDescription>
+                    <AlertDescription>{setupError ?? errorMessage}</AlertDescription>
                   </Alert>
                 ) : null}
               </>

@@ -1,19 +1,8 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import type {
-  CreateInvitationInput,
-  CurrentUserDto,
-  HealthDto,
-  UsersWorkspaceDto,
-} from '@acme/shared';
+import type { CurrentUserDto, HealthDto, UsersWorkspaceDto } from '@acme/shared';
 
 import { apiClient } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-keys';
@@ -36,20 +25,3 @@ export const useUsersWorkspaceQuery = (): UseQueryResult<UsersWorkspaceDto> =>
     queryKey: queryKeys.users.workspace,
     queryFn: apiClient.getUsersWorkspace,
   });
-
-export const useCreateInvitationMutation = (): UseMutationResult<
-  { invitationId: string },
-  Error,
-  CreateInvitationInput
-> => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: apiClient.createInvitation,
-    onSuccess() {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.users.workspace,
-      });
-    },
-  });
-};

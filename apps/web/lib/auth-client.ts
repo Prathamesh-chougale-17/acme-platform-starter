@@ -29,6 +29,7 @@ export const authClient = createAuthClient({
     create: AsyncClientMethod;
     acceptInvitation: AsyncClientMethod;
     getInvitation: AsyncClientMethod;
+    inviteMember: AsyncClientMethod;
     list: AsyncClientMethod;
     setActive: AsyncClientMethod;
   };
