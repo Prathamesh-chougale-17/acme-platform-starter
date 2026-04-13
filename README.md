@@ -926,8 +926,6 @@ This starter is ready for the next layer of platform work:
 - background jobs
 - webhooks
 - feature flags
-- preview deployments
-- production secrets management
 - managed database environments
 - audit logging
 
