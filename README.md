@@ -272,6 +272,8 @@ Create these files before starting the apps:
 
 These files are for local development only. Do not upload them to Vercel, Railway, Supabase, or GitHub.
 
+Do not set `NODE_ENV` manually in these local `.env` files. Next.js and deployed runtimes should control `NODE_ENV` themselves.
+
 Start from the checked-in examples:
 
 ```bash
