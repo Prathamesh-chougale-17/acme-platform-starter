@@ -96,7 +96,7 @@ export const enqueueInviteEmailJob = async (payload: InviteEmailJobPayload): Pro
       type: 'exponential',
       delay: 30_000,
     },
-    jobId: `invite-email:${parsed.invitationId}`,
+    jobId: `invite-email-${parsed.invitationId}`,
   });
 };
 
@@ -111,7 +111,7 @@ export const enqueueWebhookDeliveryJob = async (
       type: 'exponential',
       delay: 15_000,
     },
-    jobId: `webhook-delivery:${parsed.deliveryId}`,
+    jobId: `webhook-delivery-${parsed.deliveryId}`,
   });
 };
 
