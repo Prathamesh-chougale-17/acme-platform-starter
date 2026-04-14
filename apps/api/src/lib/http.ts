@@ -25,12 +25,16 @@ const buildMeta = (c: Context<AppContext>) => {
   };
 };
 
-export const jsonSuccess = <T>(c: Context<AppContext>, statusCode: number, data: T) =>
-  c.json(success(data, buildMeta(c)), statusCode as ContentfulStatusCode);
-
-export const jsonError = (
+export const jsonSuccess = <T, S extends ContentfulStatusCode>(
   c: Context<AppContext>,
-  statusCode: number,
+  statusCode: S,
+  data: T,
+) =>
+  c.json(success(data, buildMeta(c)), statusCode);
+
+export const jsonError = <S extends ContentfulStatusCode>(
+  c: Context<AppContext>,
+  statusCode: S,
   code: ErrorCode,
   message: string,
   details?: unknown,
@@ -44,5 +48,5 @@ export const jsonError = (
       },
       buildMeta(c),
     ),
-    statusCode as ContentfulStatusCode,
+    statusCode,
   );

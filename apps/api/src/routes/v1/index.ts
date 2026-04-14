@@ -1,5 +1,7 @@
 import type { ApiEnv } from '@acme/config';
-import { Hono } from 'hono';
+import { API_V1_PREFIX, APP_NAME, APP_VERSION } from '@acme/shared';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
 
 import type { HealthService } from '../../services/health-service';
 import type { UserService } from '../../services/user-service';
@@ -21,7 +23,27 @@ export const createV1Routes = ({
   healthService: HealthService;
   webhookService: WebhookService;
 }) => {
-  const router = new Hono<AppContext>();
+  const router = new OpenAPIHono<AppContext>();
+
+  router.doc('/openapi.json', {
+    openapi: '3.0.0',
+    info: {
+      title: `${APP_NAME} API`,
+      version: APP_VERSION,
+    },
+    servers: [
+      {
+        url: API_V1_PREFIX,
+      },
+    ],
+  });
+  router.get(
+    '/docs',
+    Scalar({
+      url: `${API_V1_PREFIX}/openapi.json`,
+      pageTitle: `${APP_NAME} API`,
+    }),
+  );
 
   router.route('/', createHealthRoutes({ healthService }));
   router.route('/', createUserRoutes({ userService }));

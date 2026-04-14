@@ -14,6 +14,7 @@ import type {
   UsersWorkspaceDto,
   AcceptInvitationResultDto,
 } from '@acme/shared';
+import { APP_VERSION } from '@acme/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const authUser = {
@@ -301,6 +302,47 @@ describe('api routes', () => {
       throw new Error('Expected a successful health response');
     }
     expect(body.data.service).toBe('acme-api');
+  });
+
+  it('serves an OpenAPI document for the public API surface', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/openapi.json');
+    const body = (await response.json()) as {
+      openapi: string;
+      info: {
+        title: string;
+        version: string;
+      };
+      servers?: Array<{
+        url: string;
+      }>;
+      paths: Record<string, unknown>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.openapi).toBe('3.0.0');
+    expect(body.info.title).toBe('Acme Platform API');
+    expect(body.info.version).toBe(APP_VERSION);
+    expect(body.servers).toEqual([{ url: '/api/v1' }]);
+    expect(body.paths['/health']).toBeDefined();
+    expect(body.paths['/users']).toBeUndefined();
+    expect(body.paths['/webhooks']).toBeUndefined();
+    expect(body.paths['/logs-test']).toBeUndefined();
+    expect(body.paths['/error-test']).toBeUndefined();
+    expect(body.paths['/metrics']).toBeUndefined();
+  });
+
+  it('serves Scalar docs for the public API surface', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/docs');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(html).toContain('Acme Platform API');
+    expect(html).toContain('/api/v1/openapi.json');
   });
 
   it('rejects unauthenticated access to the users workspace', async () => {

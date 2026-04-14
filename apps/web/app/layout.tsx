@@ -1,4 +1,4 @@
-import type { Metadata, Route } from 'next';
+import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 
@@ -6,7 +6,7 @@ import { canViewOperationalDashboards } from '@acme/auth';
 import { APP_NAME } from '@acme/shared';
 import '@acme/ui/globals.css';
 
-import { HeaderMenu } from '@/components/header-menu';
+import { HeaderMenu, type HeaderNavItem } from '@/components/header-menu';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -28,10 +28,11 @@ export const metadata: Metadata = {
   description: 'Production-grade monorepo starter with Next.js, Hono, Drizzle, and observability.',
 };
 
-const navItems: Array<{ href: Route; label: string; requiresPrivilege?: boolean }> = [
+const navItems: HeaderNavItem[] = [
   { href: '/', label: 'Overview' },
   { href: '/health', label: 'Health', requiresPrivilege: true },
   { href: '/users', label: 'Users' },
+  { href: '/api/v1/docs', label: 'API Docs', kind: 'link' },
 ];
 
 export default async function RootLayout({

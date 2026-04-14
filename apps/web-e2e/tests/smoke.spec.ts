@@ -10,4 +10,13 @@ test('home page renders the platform name', async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: /Open users workspace/i })).toBeVisible();
+
+  await page.getByRole('button', { name: /Explore platform/i }).click();
+  await expect(page.getByRole('link', { name: /API Docs/i })).toBeVisible();
+});
+
+test('public API docs render on the same origin', async ({ page }) => {
+  await page.goto('/api/v1/docs');
+
+  await expect(page).toHaveTitle(/Acme Platform API/i);
 });

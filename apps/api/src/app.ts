@@ -12,6 +12,7 @@ import { APP_VERSION, API_V1_PREFIX } from '@acme/shared';
 import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { AppError, jsonError } from './lib/http';
 import { metricsContentType, renderMetrics } from './lib/metrics';
@@ -124,7 +125,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
   );
 
   app.onError((error, c) => {
-    const statusCode = error instanceof AppError ? error.statusCode : 500;
+    const statusCode = (error instanceof AppError ? error.statusCode : 500) as ContentfulStatusCode;
 
     const loggerInstance = c.get('logger');
     loggerInstance?.error(
@@ -144,7 +145,13 @@ export const createApp = (options: CreateAppOptions = {}) => {
     Sentry.captureException(error);
 
     if (error instanceof AppError) {
-      return jsonError(c, error.statusCode, error.code, error.message, error.details);
+      return jsonError(
+        c,
+        error.statusCode as ContentfulStatusCode,
+        error.code,
+        error.message,
+        error.details,
+      );
     }
 
     return jsonError(c, 500, 'INTERNAL_ERROR', 'Unexpected server error');

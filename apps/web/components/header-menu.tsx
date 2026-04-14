@@ -18,10 +18,15 @@ type IconProps = {
 
 type IconComponent = (props: IconProps) => React.JSX.Element;
 
-const routeIcons: Partial<Record<Route, IconComponent>> = {
+export type HeaderNavItem =
+  | { href: Route; label: string; requiresPrivilege?: boolean; kind?: 'page' }
+  | { href: `/${string}`; label: string; requiresPrivilege?: boolean; kind: 'link' };
+
+const routeIcons: Record<string, IconComponent> = {
   '/': GridIcon,
   '/health': PulseIcon,
   '/users': TeamIcon,
+  '/api/v1/docs': DocsIcon,
 };
 
 export function HeaderMenu({
@@ -29,7 +34,7 @@ export function HeaderMenu({
   navItems,
 }: {
   currentUser: CurrentUserDto | null;
-  navItems: Array<{ href: Route; label: string }>;
+  navItems: HeaderNavItem[];
 }) {
   const pathname = usePathname();
   const menuId = useId();
@@ -173,19 +178,15 @@ export function HeaderMenu({
               {navItems.map((item) => {
                 const Icon = routeIcons[item.href] ?? GridIcon;
                 const isActive =
-                  item.href === '/'
-                    ? pathname === '/'
-                    : pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                  item.kind === 'link'
+                    ? false
+                    : item.href === '/'
+                      ? pathname === '/'
+                      : pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      setIsOpen(false);
-                    }}
-                    className={cn('header-menu-link', isActive && 'header-menu-link--active')}
-                  >
+                const itemClassName = cn('header-menu-link', isActive && 'header-menu-link--active');
+                const itemContent = (
+                  <>
                     <span className="flex items-center gap-3">
                       <span className="flex size-9 items-center justify-center rounded-2xl bg-white/6 text-slate-200">
                         <Icon className="size-4" />
@@ -195,6 +196,34 @@ export function HeaderMenu({
                     <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
                       Open
                     </span>
+                  </>
+                );
+
+                if (item.kind === 'link') {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => {
+                        setIsOpen(false);
+                      }}
+                      className={itemClassName}
+                    >
+                      {itemContent}
+                    </a>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => {
+                      setIsOpen(false);
+                    }}
+                    className={itemClassName}
+                  >
+                    {itemContent}
                   </Link>
                 );
               })}
@@ -332,6 +361,17 @@ function TeamIcon(props: IconProps) {
       <path d="M16.5 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
       <path d="M3.5 19a4.5 4.5 0 0 1 9 0" />
       <path d="M13 18a3.5 3.5 0 0 1 7 0" />
+    </svg>
+  );
+}
+
+function DocsIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <path d="M7 4.5h7l3 3V19a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 19V6A1.5 1.5 0 0 1 7.5 4.5Z" />
+      <path d="M14 4.5V8h3.5" />
+      <path d="M9 12h6" />
+      <path d="M9 15.5h6" />
     </svg>
   );
 }
