@@ -5,7 +5,8 @@
     "dev": "pnpm exec dotenv -e .env -- tsx watch src/index.ts",
     "build": "pnpm exec tsup --config tsup.config.ts",
     "start": "pnpm exec dotenv -e .env -- node dist/index.cjs",
-    "worker": "pnpm exec dotenv -e .env -- node dist/worker.cjs",
+    "start:worker": "pnpm exec dotenv -e .env -- node dist/worker.cjs",
+    "worker": "pnpm run start:worker",
     "lint": "pnpm exec eslint .",
     "typecheck": "pnpm exec tsc --noEmit",
     "test": "pnpm exec vitest run"

@@ -554,6 +554,7 @@ Async platform runbook:
 ```bash
 pnpm dev
 pnpm build
+pnpm start
 pnpm lint
 pnpm format
 pnpm format:check
