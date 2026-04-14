@@ -1,5 +1,5 @@
-import type { ActiveOrganizationDto, AuthRole } from '@acme/shared';
-import { ActiveOrganizationDtoSchema, AuthRoleSchema } from '@acme/shared';
+import type { ActiveOrganizationDto, AuthRole, OrganizationSummaryDto } from '@acme/shared';
+import { ActiveOrganizationDtoSchema, AuthRoleSchema, OrganizationSummaryDtoSchema } from '@acme/shared';
 
 import { auth } from './server';
 
@@ -12,6 +12,7 @@ export type ResolvedAuthContext = {
   user: SessionEnvelope['user'];
   organizationId: string | null;
   organization: ActiveOrganizationDto | null;
+  organizations: OrganizationSummaryDto[];
   role: AuthRole | null;
 };
 
@@ -34,7 +35,7 @@ const normalizeRole = (value: unknown): AuthRole | null => {
   return parsed.success ? parsed.data : null;
 };
 
-const normalizeOrganization = (value: unknown): ActiveOrganizationDto | null => {
+const normalizeOrganization = (value: unknown): OrganizationSummaryDto | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -44,7 +45,7 @@ const normalizeOrganization = (value: unknown): ActiveOrganizationDto | null => 
       ? value.organization
       : value;
 
-  const parsed = ActiveOrganizationDtoSchema.safeParse({
+  const parsed = OrganizationSummaryDtoSchema.safeParse({
     id: (candidate as Record<string, unknown>).id,
     name: (candidate as Record<string, unknown>).name,
     slug: (candidate as Record<string, unknown>).slug,
@@ -62,6 +63,38 @@ const normalizeOrganization = (value: unknown): ActiveOrganizationDto | null => 
   return parsed.success ? parsed.data : null;
 };
 
+const normalizeActiveOrganization = (value: unknown): ActiveOrganizationDto | null => {
+  const organization = normalizeOrganization(value);
+  const parsed = ActiveOrganizationDtoSchema.safeParse(organization);
+  return parsed.success ? parsed.data : null;
+};
+
+const listOrganizations = async (requestHeaders: Headers): Promise<OrganizationSummaryDto[]> => {
+  const result = await auth.api.listOrganizations({
+    headers: requestHeaders,
+  });
+
+  if (!Array.isArray(result)) {
+    return [];
+  }
+
+  return result
+    .map((organization) => normalizeOrganization(organization))
+    .filter((organization): organization is OrganizationSummaryDto => organization !== null);
+};
+
+const setActiveOrganization = async (
+  requestHeaders: Headers,
+  organizationId: string | null,
+): Promise<void> => {
+  await auth.api.setActiveOrganization({
+    body: {
+      organizationId,
+    },
+    headers: requestHeaders,
+  });
+};
+
 export const getServerSession = async (requestHeaders: Headers): Promise<AuthSessionData> =>
   auth.api.getSession({
     headers: requestHeaders,
@@ -76,13 +109,34 @@ export const resolveAuthContext = async (
     return null;
   }
 
-  const activeOrganizationId =
+  const sessionActiveOrganizationId =
     (sessionData.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+  const organizations = await listOrganizations(requestHeaders);
+  let activeOrganizationId = sessionActiveOrganizationId;
+  const hasActiveMembership =
+    activeOrganizationId !== null &&
+    organizations.some((organization) => organization.id === activeOrganizationId);
+
+  if (activeOrganizationId && !hasActiveMembership) {
+    await setActiveOrganization(requestHeaders, null);
+    activeOrganizationId = null;
+  }
+
+  if (!activeOrganizationId && organizations.length === 1) {
+    const [onlyOrganization] = organizations;
+
+    if (onlyOrganization) {
+      await setActiveOrganization(requestHeaders, onlyOrganization.id);
+      activeOrganizationId = onlyOrganization.id;
+    }
+  }
 
   const [roleResult, organizationResult] = await Promise.allSettled([
-    auth.api.getActiveMemberRole({
-      headers: requestHeaders,
-    }),
+    activeOrganizationId
+      ? auth.api.getActiveMemberRole({
+          headers: requestHeaders,
+        })
+      : Promise.resolve(null),
     activeOrganizationId
       ? auth.api.getFullOrganization({
           headers: requestHeaders,
@@ -98,12 +152,20 @@ export const resolveAuthContext = async (
     session: sessionData.session,
     user: sessionData.user,
     organizationId: activeOrganizationId,
+    organizations,
     organization:
-      organizationResult.status === 'fulfilled'
-        ? normalizeOrganization(organizationResult.value ?? null)
+      activeOrganizationId
+        ? normalizeActiveOrganization(
+            organizationResult.status === 'fulfilled'
+              ? (organizationResult.value ??
+                  organizations.find((organization) => organization.id === activeOrganizationId) ??
+                  null)
+              : (organizations.find((organization) => organization.id === activeOrganizationId) ??
+                  null),
+          )
         : null,
     role:
-      roleResult.status === 'fulfilled'
+      activeOrganizationId && roleResult.status === 'fulfilled'
         ? normalizeRole((roleResult.value as { role?: unknown } | null)?.role)
         : null,
   };

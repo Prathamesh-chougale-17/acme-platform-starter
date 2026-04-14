@@ -20,10 +20,11 @@ export const useCurrentUserQuery = (): UseQueryResult<CurrentUserDto> =>
     queryFn: apiClient.getMe,
   });
 
-export const useUsersWorkspaceQuery = (): UseQueryResult<UsersWorkspaceDto> =>
+export const useUsersWorkspaceQuery = (enabled = true): UseQueryResult<UsersWorkspaceDto> =>
   useQuery({
     queryKey: queryKeys.users.workspace,
     queryFn: apiClient.getUsersWorkspace,
+    enabled,
   });
 
 export const useAuditLogsQuery = (limit = 25, enabled = true): UseQueryResult<AuditLogListDto> =>

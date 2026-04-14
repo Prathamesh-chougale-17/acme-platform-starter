@@ -23,6 +23,7 @@ const toCurrentUserDto = (
       updatedAt: context.user.updatedAt.toISOString(),
     },
     organization: context.organization,
+    organizations: context.organizations,
     role: context.role,
   };
 };

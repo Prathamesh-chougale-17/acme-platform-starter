@@ -48,6 +48,7 @@ type MockAuthContext = {
   user: typeof authUser;
   organizationId: string | null;
   organization: typeof baseOrganization | null;
+  organizations: typeof baseOrganization[];
   role: AuthRole | null;
 };
 
@@ -64,11 +65,13 @@ const authContext: MockAuthContext = {
   user: authUser,
   organizationId: baseOrganization.id,
   organization: baseOrganization,
+  organizations: [baseOrganization],
   role: 'owner',
 };
 
 let currentAuthContext = authContext;
-const { createInvitationMock, createOrganizationMock, acceptInvitationMock } = vi.hoisted(() => ({
+const { createInvitationMock, createOrganizationMock, acceptInvitationMock, setActiveOrganizationMock } =
+  vi.hoisted(() => ({
   createInvitationMock: vi.fn(async () => ({
     id: 'a079fe59-bcec-4ceb-a07b-dc0a439e0d76',
   })),
@@ -78,6 +81,7 @@ const { createInvitationMock, createOrganizationMock, acceptInvitationMock } = v
   acceptInvitationMock: vi.fn(async () => ({
     id: '6a9d0f58-286f-4f69-9dd1-a8f44f1546f0',
   })),
+  setActiveOrganizationMock: vi.fn(async () => undefined),
 }));
 
 vi.mock('@acme/auth', () => ({
@@ -87,6 +91,7 @@ vi.mock('@acme/auth', () => ({
       acceptInvitation: acceptInvitationMock,
       createInvitation: createInvitationMock,
       createOrganization: createOrganizationMock,
+      setActiveOrganization: setActiveOrganizationMock,
     },
   },
   resolveAuthContext: vi.fn(async (headers: Headers) =>
@@ -276,6 +281,8 @@ describe('api routes', () => {
     acceptInvitationMock.mockResolvedValue({
       id: '6a9d0f58-286f-4f69-9dd1-a8f44f1546f0',
     });
+    setActiveOrganizationMock.mockReset();
+    setActiveOrganizationMock.mockResolvedValue(undefined);
   });
 
   it('returns health metadata', async () => {
@@ -378,6 +385,7 @@ describe('api routes', () => {
       ...authContext,
       organizationId: null,
       organization: null,
+      organizations: [],
       role: null,
       session: {
         ...authContext.session,
@@ -406,6 +414,22 @@ describe('api routes', () => {
       throw new Error('Expected a successful organization response');
     }
     expect(body.data.organizationId).toBe('58e7783f-8921-4dd3-81ed-cb82f37c1cd2');
+    expect(createOrganizationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: {
+          name: 'New Org',
+          slug: 'new-org',
+          keepCurrentActiveOrganization: false,
+        },
+      }),
+    );
+    expect(setActiveOrganizationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: {
+          organizationId: '58e7783f-8921-4dd3-81ed-cb82f37c1cd2',
+        },
+      }),
+    );
     expect(repositories.auditRepository.appendAuditLog).toHaveBeenCalledTimes(1);
     expect(repositories.auditRepository.appendAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -420,6 +444,7 @@ describe('api routes', () => {
       ...authContext,
       organizationId: null,
       organization: null,
+      organizations: [],
       role: null,
       session: {
         ...authContext.session,
@@ -446,6 +471,20 @@ describe('api routes', () => {
       throw new Error('Expected a successful invitation acceptance response');
     }
     expect(body.data.organizationId).toBe(baseOrganization.id);
+    expect(acceptInvitationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: {
+          invitationId: '6a9d0f58-286f-4f69-9dd1-a8f44f1546f0',
+        },
+      }),
+    );
+    expect(setActiveOrganizationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: {
+          organizationId: baseOrganization.id,
+        },
+      }),
+    );
     expect(repositories.auditRepository.appendAuditLog).toHaveBeenCalledTimes(1);
     expect(repositories.auditRepository.appendAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -75,10 +75,11 @@ export default async function RootLayout({
                 <div className="flex items-center gap-3">
                   {currentUser ? (
                     <>
-                      {currentUser.organization ? (
+                      {currentUser.organizations.length > 0 ? (
                         <OrganizationSwitcher
-                          currentOrganizationId={currentUser.organization.id}
-                          currentOrganizationName={currentUser.organization.name}
+                          organizations={currentUser.organizations}
+                          currentOrganizationId={currentUser.organization?.id ?? null}
+                          currentOrganizationName={currentUser.organization?.name ?? null}
                         />
                       ) : null}
                       <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 md:block">
@@ -92,6 +93,8 @@ export default async function RootLayout({
                           <span className="ml-2 text-xs text-slate-400">
                             {currentUser.organization.name}
                           </span>
+                        ) : currentUser.organizations.length > 0 ? (
+                          <span className="ml-2 text-xs text-slate-400">No active workspace</span>
                         ) : null}
                       </div>
                       <SignOutButton />

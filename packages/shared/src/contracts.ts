@@ -12,7 +12,7 @@ export const UserDtoSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const ActiveOrganizationDtoSchema = z.object({
+export const OrganizationSummaryDtoSchema = z.object({
   id: z.uuid(),
   name: z.string().min(1),
   slug: z.string().min(1),
@@ -20,6 +20,8 @@ export const ActiveOrganizationDtoSchema = z.object({
   createdAt: z.iso.datetime(),
   metadata: z.record(z.string(), z.unknown()).nullable().default({}),
 });
+
+export const ActiveOrganizationDtoSchema = OrganizationSummaryDtoSchema;
 
 export const OrganizationMemberDtoSchema = z.object({
   id: z.uuid(),
@@ -92,6 +94,7 @@ export const WebhookEndpointListDtoSchema = z.object({
 export const CurrentUserDtoSchema = z.object({
   user: UserDtoSchema,
   organization: ActiveOrganizationDtoSchema.nullable(),
+  organizations: z.array(OrganizationSummaryDtoSchema),
   role: AuthRoleSchema.nullable(),
 });
 
@@ -216,6 +219,7 @@ export const HealthDtoSchema = z.object({
 
 export type UserDto = z.infer<typeof UserDtoSchema>;
 export type AuthRole = z.infer<typeof AuthRoleSchema>;
+export type OrganizationSummaryDto = z.infer<typeof OrganizationSummaryDtoSchema>;
 export type ActiveOrganizationDto = z.infer<typeof ActiveOrganizationDtoSchema>;
 export type OrganizationMemberDto = z.infer<typeof OrganizationMemberDtoSchema>;
 export type PendingInvitationDto = z.infer<typeof PendingInvitationDtoSchema>;

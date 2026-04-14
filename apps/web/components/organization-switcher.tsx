@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import type { OrganizationSummaryDto } from '@acme/shared';
 
 import {
   Alert,
@@ -20,11 +21,13 @@ const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to switch the active workspace right now.';
 
 export function OrganizationSwitcher({
+  organizations: initialOrganizations,
   currentOrganizationId,
   currentOrganizationName,
 }: {
-  currentOrganizationId: string;
-  currentOrganizationName: string;
+  organizations: OrganizationSummaryDto[];
+  currentOrganizationId: string | null;
+  currentOrganizationName?: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,12 +37,14 @@ export function OrganizationSwitcher({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const organizations = organizationsQuery.data ?? [];
-  const activeOrganizationId = activeOrganizationQuery.data?.id ?? currentOrganizationId;
+  const organizations = organizationsQuery.data ?? initialOrganizations;
+  const activeOrganizationId = activeOrganizationQuery.data?.id ?? currentOrganizationId ?? undefined;
   const activeOrganizationName =
     organizations.find((organization) => organization.id === activeOrganizationId)?.name ??
     activeOrganizationQuery.data?.name ??
-    currentOrganizationName;
+    currentOrganizationName ??
+    organizations[0]?.name ??
+    'Choose workspace';
   const deniedTarget = searchParams.get('denied');
   const nextRoute = useMemo(() => {
     if (deniedTarget?.startsWith('/')) {

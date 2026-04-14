@@ -34,6 +34,7 @@ import type {
   CurrentUserDto,
 } from '@acme/shared';
 
+import { authClient } from '@/lib/auth-client';
 import { ApiClientError, apiClient } from '@/lib/api-client';
 import { useAuditLogsQuery, useUsersWorkspaceQuery } from '@/lib/queries';
 
@@ -111,17 +112,22 @@ export function UsersWorkspace({
   const [notice, setNotice] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [isProvisioning, startProvisioning] = useTransition();
+  const [isSelectingWorkspace, startSelectingWorkspace] = useTransition();
   const [isInviting, setIsInviting] = useState(false);
-  const workspaceQuery = useUsersWorkspaceQuery();
+  const [workspaceSelectionError, setWorkspaceSelectionError] = useState<string | null>(null);
+  const workspaceQuery = useUsersWorkspaceQuery(Boolean(viewer.organization?.id));
 
   const workspace = workspaceQuery.data;
   const effectiveViewer = workspace?.viewer ?? viewer;
+  const organizations = effectiveViewer.organizations;
   const members = workspace?.members ?? [];
   const invitations = workspace?.invitations ?? [];
   const canInviteMembers = canManageMembers(effectiveViewer.role);
+  const hasActiveWorkspace = Boolean(effectiveViewer.organization?.id);
+  const hasOrganizations = organizations.length > 0;
   const auditLogsQuery = useAuditLogsQuery(
     25,
-    Boolean(effectiveViewer.organization?.id && canInviteMembers),
+    Boolean(viewer.organization?.id && canInviteMembers),
   );
   const errorMessage = workspaceQuery.isError ? getErrorMessage(workspaceQuery.error) : null;
 
@@ -165,7 +171,7 @@ export function UsersWorkspace({
     }
   };
 
-  if (!effectiveViewer.organization) {
+  if (!hasActiveWorkspace && !hasOrganizations) {
     return (
       <div className="space-y-8">
         <div className="space-y-3">
@@ -234,6 +240,90 @@ export function UsersWorkspace({
     );
   }
 
+  if (!hasActiveWorkspace) {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-3">
+          <Badge>Workspace Selection</Badge>
+          <h1 className="text-4xl font-semibold tracking-tight text-white">
+            Choose a workspace to continue
+          </h1>
+          <p className="max-w-3xl text-base leading-7 text-slate-300">
+            This account already belongs to {organizations.length === 1 ? 'an organization' : 'multiple organizations'},
+            but no active workspace is selected for the current session yet. Pick the correct
+            organization below to continue.
+          </p>
+        </div>
+
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <CardTitle>Select an active workspace</CardTitle>
+            <CardDescription>
+              Member management, invitations, and role-aware access all follow the active
+              workspace in your current session.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {organizations.map((organization) => (
+              <div
+                key={organization.id}
+                className="flex flex-col gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground md:flex-row md:items-center md:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-white">{organization.name}</p>
+                  <p className="truncate text-muted-foreground">{organization.slug}</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  disabled={isSelectingWorkspace}
+                  onClick={() => {
+                    setWorkspaceSelectionError(null);
+                    startSelectingWorkspace(async () => {
+                      try {
+                        const response = (await authClient.organization.setActive({
+                          organizationId: organization.id,
+                        })) as {
+                          error?: {
+                            message?: string;
+                          } | null;
+                        };
+
+                        if (response.error) {
+                          setWorkspaceSelectionError(
+                            response.error.message ?? 'Unable to switch organization.',
+                          );
+                          return;
+                        }
+
+                        router.refresh();
+                      } catch (error) {
+                        setWorkspaceSelectionError(getErrorMessage(error));
+                      }
+                    });
+                  }}
+                >
+                  {isSelectingWorkspace ? 'Switching...' : 'Use this workspace'}
+                </Button>
+              </div>
+            ))}
+            {workspaceSelectionError ? (
+              <Alert variant="destructive">
+                <AlertTitle>Workspace switch failed</AlertTitle>
+                <AlertDescription>{workspaceSelectionError}</AlertDescription>
+              </Alert>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const activeOrganization = effectiveViewer.organization;
+
+  if (!activeOrganization) {
+    return null;
+  }
+
   return (
     <div className="space-y-8">
       <div className="space-y-3">
@@ -242,7 +332,7 @@ export function UsersWorkspace({
           {canInviteMembers ? 'Invite and manage teammates' : 'View organization teammates'}
         </h1>
         <p className="max-w-3xl text-base leading-7 text-slate-300">
-          Active organization: {effectiveViewer.organization.name}. The same session and role data
+          Active organization: {activeOrganization.name}. The same session and role data
           are consumed by Next.js, Better Auth, and the Hono API.
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -273,8 +363,8 @@ export function UsersWorkspace({
                 <AlertTitle>Access denied for {deniedRoute}</AlertTitle>
                 <AlertDescription>
                   Your current workspace role is <strong>{effectiveViewer.role ?? 'member'}</strong>{' '}
-                  in <strong>{effectiveViewer.organization.name}</strong>. Switch the active
-                  workspace if you need an organization where you are an owner or admin.
+                  in <strong>{activeOrganization.name}</strong>. Switch the active workspace if you
+                  need an organization where you are an owner or admin.
                 </AlertDescription>
               </Alert>
             ) : null}

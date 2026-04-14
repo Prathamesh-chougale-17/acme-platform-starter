@@ -1,5 +1,6 @@
 'use client';
 
+import type { OrganizationSummaryDto } from '@acme/shared';
 import { createAuthClient } from 'better-auth/react';
 import { organizationClient } from 'better-auth/client/plugins';
 
@@ -12,19 +13,12 @@ type AuthQueryResult<T> = {
     message?: string;
   } | null;
 };
-type OrganizationSummary = {
-  id: string;
-  name: string;
-  slug: string;
-  logo?: string | null;
-  metadata?: Record<string, unknown> | null;
-};
 
 export const authClient = createAuthClient({
   plugins: [organizationClient()],
 }) as unknown as ReturnType<typeof createAuthClient> & {
-  useListOrganizations: () => AuthQueryResult<OrganizationSummary[]>;
-  useActiveOrganization: () => AuthQueryResult<OrganizationSummary>;
+  useListOrganizations: () => AuthQueryResult<OrganizationSummaryDto[]>;
+  useActiveOrganization: () => AuthQueryResult<OrganizationSummaryDto>;
   organization: {
     create: AsyncClientMethod;
     acceptInvitation: AsyncClientMethod;

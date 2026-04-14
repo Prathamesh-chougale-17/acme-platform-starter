@@ -107,6 +107,7 @@ const toCurrentUserDto = (authContext: ResolvedAuthContext): CurrentUserDto => (
     updatedAt: toIsoString(authContext.user.updatedAt),
   },
   organization: authContext.organization,
+  organizations: authContext.organizations,
   role: authContext.role,
 });
 
@@ -243,7 +244,10 @@ export class UserService {
   ): Promise<CreateOrganizationResultDto> {
     try {
       const organization = await auth.api.createOrganization({
-        body: input,
+        body: {
+          ...input,
+          keepCurrentActiveOrganization: false,
+        },
         headers: requestHeaders,
       });
 
@@ -264,6 +268,13 @@ export class UserService {
           'Organization provisioning completed without a valid organization id',
         );
       }
+
+      await auth.api.setActiveOrganization({
+        body: {
+          organizationId,
+        },
+        headers: requestHeaders,
+      });
 
       await recordOrganizationAccessEvent({
         auditRepository: this.auditRepository,
@@ -347,6 +358,13 @@ export class UserService {
       await auth.api.acceptInvitation({
         body: {
           invitationId,
+        },
+        headers: requestHeaders,
+      });
+
+      await auth.api.setActiveOrganization({
+        body: {
+          organizationId: invitation.organizationId,
         },
         headers: requestHeaders,
       });
