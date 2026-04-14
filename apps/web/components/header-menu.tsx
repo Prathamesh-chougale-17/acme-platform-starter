@@ -184,7 +184,10 @@ export function HeaderMenu({
                       ? pathname === '/'
                       : pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
-                const itemClassName = cn('header-menu-link', isActive && 'header-menu-link--active');
+                const itemClassName = cn(
+                  'header-menu-link',
+                  isActive && 'header-menu-link--active',
+                );
                 const itemContent = (
                   <>
                     <span className="flex items-center gap-3">

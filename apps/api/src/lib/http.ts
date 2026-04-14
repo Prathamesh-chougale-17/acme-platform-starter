@@ -29,8 +29,7 @@ export const jsonSuccess = <T, S extends ContentfulStatusCode>(
   c: Context<AppContext>,
   statusCode: S,
   data: T,
-) =>
-  c.json(success(data, buildMeta(c)), statusCode);
+) => c.json(success(data, buildMeta(c)), statusCode);
 
 export const jsonError = <S extends ContentfulStatusCode>(
   c: Context<AppContext>,
