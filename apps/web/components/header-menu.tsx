@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ComponentProps } from 'react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Route } from 'next';
 import type { CurrentUserDto } from '@acme/shared';
@@ -11,7 +10,13 @@ import { Badge, Button, Separator, cn } from '@acme/ui';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
 import { SignOutButton } from '@/components/sign-out-button';
 
-type IconComponent = (props: ComponentProps<'svg'>) => React.JSX.Element;
+type IconProps = {
+  className?: string;
+  'data-icon'?: 'inline-start' | 'inline-end';
+  'aria-hidden'?: boolean;
+};
+
+type IconComponent = (props: IconProps) => React.JSX.Element;
 
 const routeIcons: Partial<Record<Route, IconComponent>> = {
   '/': GridIcon,
@@ -274,7 +279,7 @@ export function HeaderMenu({
   );
 }
 
-function MenuIcon(props: ComponentProps<'svg'>) {
+function MenuIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M4 7h16" />
@@ -284,7 +289,7 @@ function MenuIcon(props: ComponentProps<'svg'>) {
   );
 }
 
-function ChevronIcon(props: ComponentProps<'svg'>) {
+function ChevronIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="m6 9 6 6 6-6" />
@@ -292,7 +297,7 @@ function ChevronIcon(props: ComponentProps<'svg'>) {
   );
 }
 
-function SparkleIcon(props: ComponentProps<'svg'>) {
+function SparkleIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z" />
@@ -301,7 +306,7 @@ function SparkleIcon(props: ComponentProps<'svg'>) {
   );
 }
 
-function GridIcon(props: ComponentProps<'svg'>) {
+function GridIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <rect x="4" y="4" width="6" height="6" rx="1.2" />
@@ -312,7 +317,7 @@ function GridIcon(props: ComponentProps<'svg'>) {
   );
 }
 
-function PulseIcon(props: ComponentProps<'svg'>) {
+function PulseIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M3 12h4l2.5-5 3 10 2.5-5H21" />
@@ -320,7 +325,7 @@ function PulseIcon(props: ComponentProps<'svg'>) {
   );
 }
 
-function TeamIcon(props: ComponentProps<'svg'>) {
+function TeamIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
