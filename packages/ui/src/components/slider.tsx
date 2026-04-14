@@ -1,6 +1,6 @@
-import { Slider as SliderPrimitive } from '@acme/ui/components/slider';
+import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 
-import { cn } from '@acme/ui/lib/utils';
+import { cn } from '../lib/utils';
 
 function Slider({
   className,

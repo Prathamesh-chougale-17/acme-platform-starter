@@ -1,8 +1,8 @@
 'use client';
 
-import { Switch as SwitchPrimitive } from '@acme/ui/components/switch';
+import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
 
-import { cn } from '@acme/ui/lib/utils';
+import { cn } from '../lib/utils';
 
 function Switch({
   className,

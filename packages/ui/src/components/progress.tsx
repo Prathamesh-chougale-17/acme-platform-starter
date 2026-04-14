@@ -1,8 +1,8 @@
 'use client';
 
-import { Progress as ProgressPrimitive } from '@acme/ui/components/progress';
+import { Progress as ProgressPrimitive } from '@base-ui/react/progress';
 
-import { cn } from '@acme/ui/lib/utils';
+import { cn } from '../lib/utils';
 
 function Progress({ className, children, value, ...props }: ProgressPrimitive.Root.Props) {
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { Toaster as Sonner, type ToasterProps } from '@acme/ui/components/sonner';
+import { Toaster as Sonner, type ToasterProps } from 'sonner';
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -10,12 +10,24 @@ import {
   Loader2Icon,
 } from 'lucide-react';
 
+const toasterStyle = {
+  '--normal-bg': 'var(--popover)',
+  '--normal-text': 'var(--popover-foreground)',
+  '--normal-border': 'var(--border)',
+  '--border-radius': 'var(--radius)',
+} as NonNullable<ToasterProps['style']>;
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme();
+  const resolvedTheme = (theme ?? 'system') as NonNullable<ToasterProps['theme']>;
+  const { style: userStyle, ...restProps } = props;
+  const mergedStyle = (userStyle ? { ...toasterStyle, ...userStyle } : toasterStyle) as NonNullable<
+    ToasterProps['style']
+  >;
 
   return (
     <Sonner
-      theme={theme as ToasterProps['theme']}
+      theme={resolvedTheme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
@@ -24,20 +36,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <OctagonXIcon className="size-4" />,
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
-      style={
-        {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
-          '--border-radius': 'var(--radius)',
-        } as React.CSSProperties
-      }
+      style={mergedStyle}
       toastOptions={{
         classNames: {
           toast: 'cn-toast',
         },
       }}
-      {...props}
+      {...restProps}
     />
   );
 };
