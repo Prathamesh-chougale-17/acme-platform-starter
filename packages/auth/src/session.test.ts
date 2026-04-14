@@ -28,20 +28,18 @@ const orgBeta = {
   metadata: {},
 };
 
-let currentSession:
-  | {
-      session: {
-        id: string;
-        userId: string;
-        expiresAt: Date;
-        createdAt: Date;
-        updatedAt: Date;
-        token: string;
-        activeOrganizationId: string | null;
-      };
-      user: typeof baseUser;
-    }
-  | null;
+let currentSession: {
+  session: {
+    id: string;
+    userId: string;
+    expiresAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    token: string;
+    activeOrganizationId: string | null;
+  };
+  user: typeof baseUser;
+} | null;
 
 let listedOrganizations: Array<typeof orgAlpha | typeof orgBeta>;
 let activeMemberRole: { role: string } | null;

@@ -134,8 +134,8 @@ export default function HomePage() {
             </CardDescription>
             <CardTitle className="text-2xl text-white">One contract, fewer seams</CardTitle>
             <CardDescription className="max-w-2xl text-base leading-8 text-slate-300">
-              The web app speaks to the versioned Hono layer through shared DTOs, query helpers,
-              and a same-origin shell that stays predictable in preview and production.
+              The web app speaks to the versioned Hono layer through shared DTOs, query helpers, and
+              a same-origin shell that stays predictable in preview and production.
             </CardDescription>
           </CardHeader>
         </Card>

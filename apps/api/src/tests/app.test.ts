@@ -48,7 +48,7 @@ type MockAuthContext = {
   user: typeof authUser;
   organizationId: string | null;
   organization: typeof baseOrganization | null;
-  organizations: typeof baseOrganization[];
+  organizations: (typeof baseOrganization)[];
   role: AuthRole | null;
 };
 
@@ -70,8 +70,12 @@ const authContext: MockAuthContext = {
 };
 
 let currentAuthContext = authContext;
-const { createInvitationMock, createOrganizationMock, acceptInvitationMock, setActiveOrganizationMock } =
-  vi.hoisted(() => ({
+const {
+  createInvitationMock,
+  createOrganizationMock,
+  acceptInvitationMock,
+  setActiveOrganizationMock,
+} = vi.hoisted(() => ({
   createInvitationMock: vi.fn(async () => ({
     id: 'a079fe59-bcec-4ceb-a07b-dc0a439e0d76',
   })),

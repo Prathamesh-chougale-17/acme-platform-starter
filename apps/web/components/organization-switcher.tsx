@@ -13,6 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  cn,
 } from '@acme/ui';
 
 import { authClient } from '@/lib/auth-client';
@@ -24,10 +25,18 @@ export function OrganizationSwitcher({
   organizations: initialOrganizations,
   currentOrganizationId,
   currentOrganizationName,
+  className,
+  showLabel = true,
+  forceVisible = false,
+  onSwitchComplete,
 }: {
   organizations: OrganizationSummaryDto[];
   currentOrganizationId: string | null;
   currentOrganizationName?: string | null;
+  className?: string;
+  showLabel?: boolean;
+  forceVisible?: boolean;
+  onSwitchComplete?: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,7 +47,8 @@ export function OrganizationSwitcher({
   const [isPending, startTransition] = useTransition();
 
   const organizations = organizationsQuery.data ?? initialOrganizations;
-  const activeOrganizationId = activeOrganizationQuery.data?.id ?? currentOrganizationId ?? undefined;
+  const activeOrganizationId =
+    activeOrganizationQuery.data?.id ?? currentOrganizationId ?? undefined;
   const activeOrganizationName =
     organizations.find((organization) => organization.id === activeOrganizationId)?.name ??
     activeOrganizationQuery.data?.name ??
@@ -56,10 +66,18 @@ export function OrganizationSwitcher({
 
   if (organizations.length <= 1) {
     return (
-      <div className="hidden min-w-72 flex-col gap-1.5 md:flex">
-        <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
-          Workspace
-        </span>
+      <div
+        className={cn(
+          'min-w-72 flex-col gap-1.5',
+          forceVisible ? 'flex' : 'hidden md:flex',
+          className,
+        )}
+      >
+        {showLabel ? (
+          <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+            Workspace
+          </span>
+        ) : null}
         <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
           <span className="block truncate">{currentOrganizationName}</span>
         </div>
@@ -68,13 +86,21 @@ export function OrganizationSwitcher({
   }
 
   return (
-    <div className="hidden min-w-72 flex-col gap-2 md:flex">
-      <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
-        Workspace
-      </span>
+    <div
+      className={cn('min-w-72 flex-col gap-2', forceVisible ? 'flex' : 'hidden md:flex', className)}
+    >
+      {showLabel ? (
+        <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+          Workspace
+        </span>
+      ) : null}
       <Select
         value={activeOrganizationId}
-        onValueChange={(organizationId) => {
+        onValueChange={(organizationId: string | null) => {
+          if (!organizationId) {
+            return;
+          }
+
           if (organizationId === activeOrganizationId) {
             return;
           }
@@ -97,6 +123,7 @@ export function OrganizationSwitcher({
 
               router.push(nextRoute as never);
               router.refresh();
+              onSwitchComplete?.();
             } catch (caughtError) {
               setError(getErrorMessage(caughtError));
             }
@@ -106,7 +133,7 @@ export function OrganizationSwitcher({
       >
         <SelectTrigger className="h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-slate-200 shadow-none focus-visible:border-cyan-400/40 focus-visible:ring-2 focus-visible:ring-cyan-400/20">
           <SelectValue placeholder={currentOrganizationName}>
-            {(value) =>
+            {(value: string | null) =>
               organizations.find((organization) => organization.id === value)?.name ??
               activeOrganizationName
             }

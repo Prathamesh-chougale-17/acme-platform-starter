@@ -1,5 +1,9 @@
 import type { ActiveOrganizationDto, AuthRole, OrganizationSummaryDto } from '@acme/shared';
-import { ActiveOrganizationDtoSchema, AuthRoleSchema, OrganizationSummaryDtoSchema } from '@acme/shared';
+import {
+  ActiveOrganizationDtoSchema,
+  AuthRoleSchema,
+  OrganizationSummaryDtoSchema,
+} from '@acme/shared';
 
 import { auth } from './server';
 
@@ -153,17 +157,16 @@ export const resolveAuthContext = async (
     user: sessionData.user,
     organizationId: activeOrganizationId,
     organizations,
-    organization:
-      activeOrganizationId
-        ? normalizeActiveOrganization(
-            organizationResult.status === 'fulfilled'
-              ? (organizationResult.value ??
-                  organizations.find((organization) => organization.id === activeOrganizationId) ??
-                  null)
-              : (organizations.find((organization) => organization.id === activeOrganizationId) ??
-                  null),
-          )
-        : null,
+    organization: activeOrganizationId
+      ? normalizeActiveOrganization(
+          organizationResult.status === 'fulfilled'
+            ? (organizationResult.value ??
+                organizations.find((organization) => organization.id === activeOrganizationId) ??
+                null)
+            : (organizations.find((organization) => organization.id === activeOrganizationId) ??
+                null),
+        )
+      : null,
     role:
       activeOrganizationId && roleResult.status === 'fulfilled'
         ? normalizeRole((roleResult.value as { role?: unknown } | null)?.role)

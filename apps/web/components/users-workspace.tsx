@@ -249,9 +249,10 @@ export function UsersWorkspace({
             Choose a workspace to continue
           </h1>
           <p className="max-w-4xl text-base leading-7 text-slate-300">
-            This account already belongs to {organizations.length === 1 ? 'an organization' : 'multiple organizations'},
-            but no active workspace is selected for the current session yet. Pick the correct
-            organization below to continue.
+            This account already belongs to{' '}
+            {organizations.length === 1 ? 'an organization' : 'multiple organizations'}, but no
+            active workspace is selected for the current session yet. Pick the correct organization
+            below to continue.
           </p>
         </div>
 
@@ -259,8 +260,8 @@ export function UsersWorkspace({
           <CardHeader>
             <CardTitle>Select an active workspace</CardTitle>
             <CardDescription>
-              Member management, invitations, and role-aware access all follow the active
-              workspace in your current session.
+              Member management, invitations, and role-aware access all follow the active workspace
+              in your current session.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -332,8 +333,8 @@ export function UsersWorkspace({
           {canInviteMembers ? 'Invite and manage teammates' : 'View organization teammates'}
         </h1>
         <p className="max-w-3xl text-base leading-7 text-slate-300">
-          Active organization: {activeOrganization.name}. The same session and role data
-          are consumed by Next.js, Better Auth, and the Hono API.
+          Active organization: {activeOrganization.name}. The same session and role data are
+          consumed by Next.js, Better Auth, and the Hono API.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant={memberRoleVariant[effectiveViewer.role ?? 'member'] ?? 'outline'}>
@@ -381,12 +382,16 @@ export function UsersWorkspace({
                   />
                   <Select
                     value={inviteForm.role}
-                    onValueChange={(value) =>
+                    onValueChange={(value: string | null) => {
+                      if (!value) {
+                        return;
+                      }
+
                       setInviteForm((current) => ({
                         ...current,
                         role: value as CreateInvitationInput['role'],
-                      }))
-                    }
+                      }));
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select role" />
