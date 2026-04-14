@@ -56,7 +56,7 @@ export function HealthDashboard({
           <h1 className="text-4xl font-semibold tracking-tight text-white">
             Platform telemetry view
           </h1>
-          <p className="max-w-3xl text-base leading-7 text-slate-300">
+          <p className="max-w-4xl text-base leading-7 text-slate-300">
             Inspect the API health contract, confirm environment wiring, and verify that local
             observability is ready before feature work starts.
           </p>
@@ -67,19 +67,19 @@ export function HealthDashboard({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="shell-surface metric-tile rounded-[1.5rem] border-white/10 bg-white/[0.04]">
           <CardHeader>
             <CardTitle>Frontend env</CardTitle>
             <CardDescription>{environment}</CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="shell-surface metric-tile rounded-[1.5rem] border-white/10 bg-white/[0.04]">
           <CardHeader>
             <CardTitle>Backend access path</CardTitle>
             <CardDescription className="font-mono text-primary">{apiAccessPath}</CardDescription>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="shell-surface metric-tile rounded-[1.5rem] border-white/10 bg-white/[0.04]">
           <CardHeader>
             <CardTitle>Request state</CardTitle>
             <CardDescription>{requestState}</CardDescription>
@@ -90,7 +90,10 @@ export function HealthDashboard({
       {healthQuery.isPending ? (
         <div className="grid gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index}>
+            <Card
+              key={index}
+              className="shell-surface rounded-[1.5rem] border-white/10 bg-white/[0.04]"
+            >
               <CardHeader>
                 <Skeleton className="h-5 w-28" />
                 <Skeleton className="h-4 w-48" />
@@ -109,7 +112,10 @@ export function HealthDashboard({
       ) : health ? (
         <div className="grid gap-4 md:grid-cols-3">
           {Object.entries(health.checks).map(([key, value]) => (
-            <Card key={key}>
+            <Card
+              key={key}
+              className="shell-surface metric-tile rounded-[1.5rem] border-white/10 bg-white/[0.04]"
+            >
               <CardHeader>
                 <CardTitle className="capitalize">{key}</CardTitle>
                 <CardAction>
@@ -119,7 +125,7 @@ export function HealthDashboard({
               </CardHeader>
             </Card>
           ))}
-          <Card className="md:col-span-3">
+          <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04] md:col-span-3">
             <CardHeader>
               <CardTitle>Backend payload</CardTitle>
               <CardDescription>

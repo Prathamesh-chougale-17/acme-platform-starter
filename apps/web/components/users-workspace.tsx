@@ -176,16 +176,16 @@ export function UsersWorkspace({
       <div className="space-y-8">
         <div className="space-y-3">
           <Badge>Organization Setup</Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-white">
+          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
             Finish your workspace setup
           </h1>
-          <p className="max-w-3xl text-base leading-7 text-slate-300">
+          <p className="max-w-4xl text-base leading-7 text-slate-300">
             Your account is ready. Create the first organization to unlock member management,
             operational dashboards, and role-aware API access.
           </p>
         </div>
 
-        <Card className="max-w-2xl">
+        <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
           <CardHeader>
             <CardTitle>Create your first organization</CardTitle>
             <CardDescription>
@@ -245,17 +245,17 @@ export function UsersWorkspace({
       <div className="space-y-8">
         <div className="space-y-3">
           <Badge>Workspace Selection</Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-white">
+          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
             Choose a workspace to continue
           </h1>
-          <p className="max-w-3xl text-base leading-7 text-slate-300">
+          <p className="max-w-4xl text-base leading-7 text-slate-300">
             This account already belongs to {organizations.length === 1 ? 'an organization' : 'multiple organizations'},
             but no active workspace is selected for the current session yet. Pick the correct
             organization below to continue.
           </p>
         </div>
 
-        <Card className="max-w-3xl">
+        <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
           <CardHeader>
             <CardTitle>Select an active workspace</CardTitle>
             <CardDescription>

@@ -25,8 +25,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-6">
-      <Card className="w-full">
+    <div className="flex min-h-[60vh] w-full items-center justify-center">
+      <Card className="shell-surface w-full rounded-[1.75rem] border-white/10 bg-white/[0.04]">
         <CardHeader>
           <CardTitle>Something went wrong</CardTitle>
           <CardDescription>

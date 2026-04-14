@@ -19,17 +19,17 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.15fr]">
-      <Card>
+    <div className="grid gap-6 xl:grid-cols-[minmax(20rem,0.95fr)_minmax(0,1.2fr)]">
+      <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
         <CardHeader className="gap-4">
           <p className="text-xs uppercase tracking-[0.2em] text-primary">{eyebrow}</p>
-          <CardTitle className="text-4xl tracking-tight text-white">{title}</CardTitle>
-          <CardDescription className="text-base leading-7 text-muted-foreground">
+          <CardTitle className="text-4xl tracking-tight text-white md:text-5xl">{title}</CardTitle>
+          <CardDescription className="max-w-xl text-base leading-8 text-muted-foreground">
             {description}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-          <div className="rounded-3xl border border-border/80 bg-background/35 p-5 text-sm text-muted-foreground">
+          <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/35 p-6 text-sm text-muted-foreground">
             <p className="font-semibold text-white">{APP_NAME}</p>
             <p className="mt-2">
               Database-backed sessions, organization RBAC, typed contracts, and the same auth system
@@ -46,8 +46,8 @@ export function AuthShell({
           ) : null}
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="flex flex-col gap-5">{children}</CardContent>
+      <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
+        <CardContent className="flex min-h-full flex-col gap-5 p-6 md:p-8">{children}</CardContent>
       </Card>
     </div>
   );
