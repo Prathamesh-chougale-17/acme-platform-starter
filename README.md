@@ -29,6 +29,7 @@ This repository combines a Next.js frontend, a Hono API, Better Auth, shared Typ
 - Node.js 22+
 - pnpm
 - Turborepo
+- Turborepo Query CLI
 - TypeScript
 - ESLint
 - Prettier
@@ -257,6 +258,28 @@ Note:
 ## Getting Started
 
 ### 1. Install Dependencies
+
+## Turborepo Query Commands
+
+The installed `turbo@2.9.6` in this repo already supports the query subcommands, so you can inspect package graphs and affected workspaces without adding another dependency.
+
+Common commands:
+
+```bash
+pnpm run query:packages
+pnpm run query:packages:affected
+pnpm run query:affected --packages --base=origin/main --head=HEAD
+pnpm run query:affected --tasks=build --base=origin/main --head=HEAD
+pnpm exec turbo query "query { packages { items { name path } } }"
+```
+
+Notes:
+
+- Use `pnpm run query:packages` to list all workspaces in the monorepo.
+- Use `pnpm run query:packages:affected` for a quick current-branch view against `main`.
+- Use `pnpm run query:affected --packages` when you want explicit control over `--base` and `--head`.
+- Use `pnpm run query:affected --tasks=<task>` to see which package tasks are affected instead of only package names.
+- Use `pnpm exec turbo query` to run raw GraphQL queries or start the GraphiQL server when no query string is provided.
 
 ```bash
 pnpm install
