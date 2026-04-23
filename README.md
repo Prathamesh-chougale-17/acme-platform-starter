@@ -1074,6 +1074,33 @@ Likely next expansion ideas:
 - additional queued jobs beyond invitation delivery
 - external or operator-facing feature flag management
 
+## Releasing the Starter
+
+This repo can publish the scaffold package as [`create-acme-platform`](https://www.npmjs.com/package/create-acme-platform).
+
+Release locally with one of:
+
+```bash
+pnpm release:patch
+pnpm release:minor
+pnpm release:major
+```
+
+Useful validation commands:
+
+```bash
+pnpm release:build-package
+pnpm release:verify
+pnpm release:pack:dry-run
+```
+
+Typical release flow:
+
+1. run the appropriate `pnpm release:*` command
+2. review the generated `CHANGELOG.md`, version bump, commit, and `vX.Y.Z` tag
+3. push the release commit and tag with `git push --follow-tags`
+4. let GitHub Actions publish `dist/create-acme-platform` with the `NPM_TOKEN` repo secret
+
 ## License
 
-Add the license that matches how you want to share or reuse the starter.
+MIT

@@ -1,6 +1,16 @@
 {
   "name": "acme-platform",
+  "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prathamesh-chougale-17/acme-platform-starter.git"
+  },
+  "homepage": "https://github.com/Prathamesh-chougale-17/acme-platform-starter#readme",
+  "bugs": {
+    "url": "https://github.com/Prathamesh-chougale-17/acme-platform-starter/issues"
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -19,7 +29,13 @@
     "db:generate": "pnpm exec dotenv -e apps/api/.env -- drizzle-kit generate --config=packages/db/drizzle.config.ts",
     "db:migrate": "pnpm exec dotenv -e apps/api/.env -- tsx packages/db/src/migrate.ts",
     "db:studio": "pnpm exec dotenv -e apps/api/.env -- drizzle-kit studio --config=packages/db/drizzle.config.ts",
-    "prepare": "husky"
+    "prepare": "node scripts/prepare.mjs",
+    "release:patch": "pnpm exec standard-version --release-as patch",
+    "release:minor": "pnpm exec standard-version --release-as minor",
+    "release:major": "pnpm exec standard-version --release-as major",
+    "release:build-package": "node scripts/build-create-package.mjs",
+    "release:verify": "pnpm release:build-package && node scripts/verify-create-package.mjs",
+    "release:pack:dry-run": "pnpm release:build-package && npm pack --dry-run ./dist/create-acme-platform"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -41,6 +57,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.7.4",
+    "standard-version": "^9.5.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "turbo": "^2.9.6",
