@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### 0.1.1 (2026-04-23)
+
+### Features
+
+- **actions:** adding CI pipeline ([a0a9339](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/a0a933954806ae675cd45a88c4432570a12904fe))
+- add API_LOG_TO_LOKI configuration for logging to Loki ([8eb7735](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/8eb773553e55ea68c66f42497da5176d1e3437c9))
+- add metrics reader configuration for Prometheus in OpenTelemetry Collector ([9d9547f](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/9d9547f65919b2b6e22c6207df46c0545426204d))
+- add observability stack with Grafana, Loki, Tempo, and OpenTelemetry ([d275432](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/d275432c67b78f7f14648af21cf7378a2229f441))
+- add OpenTelemetry Collector configuration schema and VSCode settings ([088c2bd](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/088c2bd1c638296f8aac6f3d71c460bf3bedcc4e))
+- add scripts for creating and verifying the Acme Platform starter package ([3c32da2](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/3c32da2909e72cbea283087559f79c20da593464))
+- add start and start:worker scripts to streamline application startup ([d1f2146](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/d1f21465e61eaac960b2225604aeb80dfe72bafa))
+- **audit:** add audit logs schema and related indices ([9f37d11](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/9f37d111feabd314f06c90cf09c5d0cfdf3e212b))
+- **audit:** implement audit logging functionality ([5dda621](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/5dda6219c69f32f5242711eea70429f7e520daa1))
+- enhance e2e testing setup with Playwright configuration and add TypeScript support ([fc8d36d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/fc8d36def3617800d87be09518069e61fb11f884))
+- enhance logging capabilities with Loki integration and transport stream configuration ([13142ed](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/13142ed85167a5fe9e8018800d66de06a4aa3101))
+- enhance UI components with improved styling and layout adjustments ([cf191a5](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/cf191a5e43abf6c5fc1540e68ecd09fd1beabe3b))
+- enhance user organization management and workspace selection ([308f100](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/308f100ea6c2dd136b26ef1174c05dae5b08213e))
+- implement graceful shutdown with Sentry integration and observability handling ([bd5f5c0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/bd5f5c0ebfbbdbc41d121cffb1036194b35736e4))
+- integrate OpenAPI support and enhance API documentation with new schemas and routes ([46d634b](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/46d634b2f908c3987e751ed77c4b642108e0068e))
+- integrate React Query for data fetching and state management across components ([e6eb7c1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/e6eb7c1bf20367fecfa946183a39cf3bff17fce7))
+- **invitation:** increase timeout for invitation requests and handle timeout errors ([3af1a71](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/3af1a71f32e8bbdaff3bca3ec0cc809bc73ad466))
+- **invitations:** implement invitation creation API with audit logging ([fda0aa4](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/fda0aa46bc2817bdfa8c516222ce044e09885167))
+- **jobs:** implement webhook delivery and event handling ([c36564d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/c36564d6425dc70048ce9ee49145793a3792bca4))
+- remove recommended repository naming section from README.md ([27528fb](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/27528fb749fa6ef579b3c8bc210ffb0469cee865))
+- update global environment variables in turbo.json and add auth:generate task ([c6c14e5](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/c6c14e53be94c4ebe3965fc8df466e4776698be4))
+- update README.md to enhance project description, repository naming recommendations, and include detailed technology stack and architecture ([de16df7](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/de16df77b537e3b1946414f0a572bb8b077325df))
+- update tempo configuration with additional metrics generator settings and storage paths ([14b6114](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/14b6114c849ed672cafe9c211ebb29b92c07abaa))
+- Updated the README.md file to give better reference ([c1d3f5d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/c1d3f5d0711949236f1de353853c6a6cbb647e07))
+
+### Bug Fixes
+
+- update environment variable paths for local development and database commands ([a33d19b](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/a33d19b2acd3081fc2114a05d5bb7524615ae9a9))
+- update jobId format in enqueueInviteEmailJob and enqueueWebhookDeliveryJob functions ([d4f5fed](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/d4f5fedc68550bf37fa2c9d4b0d44c2a1dd55a2c))
+- update PostgreSQL port to avoid conflicts and adjust migration script ([131f35b](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/131f35b62d45d6e5eb6323211f7ed15e66797c23))
