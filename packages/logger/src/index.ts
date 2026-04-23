@@ -8,7 +8,7 @@ export type AppLogger = Logger;
 
 export type LoggerBindings = {
   requestId?: string;
-  traceId?: string; 
+  traceId?: string;
   route?: string;
   method?: string;
   userId?: string;

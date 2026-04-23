@@ -17,7 +17,9 @@ const version = tagName.replace(/^v/, '');
 let notes = `Release ${tagName}\n\nSee CHANGELOG.md for the full release history.\n`;
 if (existsSync(changelogPath)) {
   const changelog = readFileSync(changelogPath, 'utf8');
-  const headings = Array.from(changelog.matchAll(/^##\s+(?:\[(?<linked>[^\]]+)\]|(?<plain>[^\s]+)).*$/gm));
+  const headings = Array.from(
+    changelog.matchAll(/^##\s+(?:\[(?<linked>[^\]]+)\]|(?<plain>[^\s]+)).*$/gm),
+  );
 
   for (let index = 0; index < headings.length; index += 1) {
     const match = headings[index];

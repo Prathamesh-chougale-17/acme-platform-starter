@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -180,7 +188,10 @@ const writePublishPackageJson = () => {
     },
   };
 
-  writeFileSync(join(publishDir, 'package.json'), `${JSON.stringify(publishPackageJson, null, 2)}\n`);
+  writeFileSync(
+    join(publishDir, 'package.json'),
+    `${JSON.stringify(publishPackageJson, null, 2)}\n`,
+  );
 };
 
 rmSync(publishDir, {

@@ -18,11 +18,7 @@ const pnpmCommand = 'pnpm';
 const runCommand = (
   command,
   args,
-  {
-    cwd = rootDir,
-    expectFailure = false,
-    captureOutput = false,
-  } = {},
+  { cwd = rootDir, expectFailure = false, captureOutput = false } = {},
 ) => {
   const result = spawnSync(command, args, {
     cwd,
@@ -113,9 +109,21 @@ for (const scriptName of [
   );
 }
 
-assert.equal(templatePackageJson.repository, undefined, 'Template package.json should not carry repository metadata');
-assert.equal(templatePackageJson.homepage, undefined, 'Template package.json should not carry homepage metadata');
-assert.equal(templatePackageJson.bugs, undefined, 'Template package.json should not carry bugs metadata');
+assert.equal(
+  templatePackageJson.repository,
+  undefined,
+  'Template package.json should not carry repository metadata',
+);
+assert.equal(
+  templatePackageJson.homepage,
+  undefined,
+  'Template package.json should not carry homepage metadata',
+);
+assert.equal(
+  templatePackageJson.bugs,
+  undefined,
+  'Template package.json should not carry bugs metadata',
+);
 
 const workspaceTempRoot = mkdtempSync(join(tmpdir(), 'create-acme-platform-verify-'));
 const directTarget = join(workspaceTempRoot, 'from-bin');
@@ -138,14 +146,10 @@ assert.match(
 
 runCommand(nodeCommand, [cliPath, directTarget, '--force']);
 
-const tarballResult = runCommand(
-  npmCommand,
-  ['pack', publishDir, '--json'],
-  {
-    cwd: workspaceTempRoot,
-    captureOutput: true,
-  },
-);
+const tarballResult = runCommand(npmCommand, ['pack', publishDir, '--json'], {
+  cwd: workspaceTempRoot,
+  captureOutput: true,
+});
 const tarballInfo = JSON.parse(tarballResult.stdout ?? '[]');
 const tarballFilename = tarballInfo[0]?.filename;
 
