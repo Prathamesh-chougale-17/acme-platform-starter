@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.5...v0.1.6) (2026-04-23)
+
+### Bug Fixes
+
+- support multiple local docker stacks ([c6a1c30](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/c6a1c302ca66be98121c1b9f456faf1fa5b0e002))
+
 ### [0.1.5](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.4...v0.1.5) (2026-04-23)
 
 ### Features
