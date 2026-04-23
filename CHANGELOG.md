@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.1...v0.1.2) (2026-04-23)
+
+### Features
+
+- add npm token verification step in release workflow ([8bfe970](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/8bfe970fc90d1126b609785084e2eb4fab1456ec))
+
 ### 0.1.1 (2026-04-23)
 
 ### Features
