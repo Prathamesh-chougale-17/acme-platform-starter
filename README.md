@@ -1099,7 +1099,12 @@ Typical release flow:
 1. run the appropriate `pnpm release:*` command
 2. review the generated `CHANGELOG.md`, version bump, commit, and `vX.Y.Z` tag
 3. push the release commit and tag with `git push --follow-tags`
-4. let GitHub Actions publish `dist/create-acme-platform` with the `NPM_TOKEN` repo secret
+4. let GitHub Actions publish `dist/create-acme-platform`
+
+Authentication options for publishing:
+
+- configure a `Production` environment secret named `NPM_TOKEN` with a write token that can publish under your npm 2FA policy
+- or configure npm Trusted Publishing for this repository and workflow file (`release.yml`) and publish through GitHub OIDC without a long-lived token
 
 ## License
 
