@@ -768,6 +768,14 @@ pnpm db:studio
 - the Better Auth CLI generates schema into `packages/db/src/schema/auth.ts`
 - Drizzle SQL migrations remain the source of truth for applied schema changes
 
+### Running Multiple Local Copies
+
+- Compose service containers no longer use fixed global `container_name` values, so separate starter directories can coexist without Docker name collisions.
+- If you want multiple local stacks running at the same time, give each project unique host port values in the root `.env` file:
+  `POSTGRES_PORT`, `REDIS_PORT`, `LOKI_PORT`, `TEMPO_PORT`, `OTEL_GRPC_PORT`, `OTEL_HTTP_PORT`, `OTEL_METRICS_PORT`, `PROMETHEUS_PORT`, and `GRAFANA_PORT`.
+- If two local copies happen to share the same folder name, set `COMPOSE_PROJECT_NAME` in the root `.env` of one copy so Docker Compose namespaces the stack differently.
+- After changing those Compose host ports, update the matching `localhost` URLs in `apps/api/.env` and `apps/web/.env` so the app talks to the correct local infrastructure.
+
 ## API Design Conventions
 
 - all public routes are versioned under `/api/v1`

@@ -1,13 +1,12 @@
 services:
   postgres:
     image: postgres:17.4-alpine
-    container_name: acme-postgres
     environment:
       POSTGRES_DB: acme_platform
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '5433:5432'
+      - '${POSTGRES_PORT:-5433}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -18,9 +17,8 @@ services:
 
   redis:
     image: redis:8.2-alpine
-    container_name: acme-redis
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     command: ['redis-server', '--save', '', '--appendonly', 'no']
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
@@ -30,45 +28,41 @@ services:
 
   loki:
     image: grafana/loki:3.4.2
-    container_name: acme-loki
     command: ['-config.file=/etc/loki/config.yml']
     ports:
-      - '3100:3100'
+      - '${LOKI_PORT:-3100}:3100'
     volumes:
       - ./infra/observability/loki-config.yml:/etc/loki/config.yml:ro
 
   tempo:
     image: grafana/tempo:2.7.2
-    container_name: acme-tempo
     command: ['-config.file=/etc/tempo.yaml']
     ports:
-      - '3200:3200'
+      - '${TEMPO_PORT:-3200}:3200'
     volumes:
       - ./infra/observability/tempo.yaml:/etc/tempo.yaml:ro
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.126.0
-    container_name: acme-otel-collector
     command: ['--config=/etc/otelcol-contrib/config.yaml']
     depends_on:
       - tempo
     ports:
-      - '4317:4317'
-      - '4318:4318'
-      - '8889:8889'
+      - '${OTEL_GRPC_PORT:-4317}:4317'
+      - '${OTEL_HTTP_PORT:-4318}:4318'
+      - '${OTEL_METRICS_PORT:-8889}:8889'
     volumes:
       - ./infra/observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
 
   prometheus:
     image: prom/prometheus:v3.5.0
-    container_name: acme-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.enable-remote-write-receiver'
     depends_on:
       - otel-collector
     ports:
-      - '9090:9090'
+      - '${PROMETHEUS_PORT:-9090}:9090'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
@@ -76,7 +70,6 @@ services:
 
   grafana:
     image: grafana/grafana:12.1.1
-    container_name: acme-grafana
     depends_on:
       - loki
       - tempo
@@ -85,7 +78,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     ports:
-      - '3002:3000'
+      - '${GRAFANA_PORT:-3002}:3000'
     volumes:
       - grafana-data:/var/lib/grafana
       - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
