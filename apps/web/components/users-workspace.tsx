@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
 
 import {
   Alert,
@@ -34,20 +34,11 @@ import type {
   CurrentUserDto,
 } from '@acme/shared';
 
-import { authClient } from '@/lib/auth-client';
 import { ApiClientError, apiClient } from '@/lib/api-client';
 import { useAuditLogsQuery, useUsersWorkspaceQuery } from '@/lib/queries';
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to complete the request';
-
-const slugify = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
@@ -103,28 +94,20 @@ export function UsersWorkspace({
   viewer: CurrentUserDto;
   deniedRoute?: string | undefined;
 }) {
-  const router = useRouter();
   const [inviteForm, setInviteForm] = useState<CreateInvitationInput>({
     email: '',
     role: 'member',
   });
-  const [organizationName, setOrganizationName] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
-  const [isProvisioning, startProvisioning] = useTransition();
-  const [isSelectingWorkspace, startSelectingWorkspace] = useTransition();
   const [isInviting, setIsInviting] = useState(false);
-  const [workspaceSelectionError, setWorkspaceSelectionError] = useState<string | null>(null);
   const workspaceQuery = useUsersWorkspaceQuery(Boolean(viewer.organization?.id));
 
   const workspace = workspaceQuery.data;
   const effectiveViewer = workspace?.viewer ?? viewer;
-  const organizations = effectiveViewer.organizations;
   const members = workspace?.members ?? [];
   const invitations = workspace?.invitations ?? [];
   const canInviteMembers = canManageMembers(effectiveViewer.role);
-  const hasActiveWorkspace = Boolean(effectiveViewer.organization?.id);
-  const hasOrganizations = organizations.length > 0;
   const auditLogsQuery = useAuditLogsQuery(
     25,
     Boolean(viewer.organization?.id && canInviteMembers),
@@ -171,158 +154,32 @@ export function UsersWorkspace({
     }
   };
 
-  if (!hasActiveWorkspace && !hasOrganizations) {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <Badge>Organization Setup</Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Finish your workspace setup
-          </h1>
-          <p className="max-w-4xl text-base leading-7 text-slate-300">
-            Your account is ready. Create the first organization to unlock member management,
-            operational dashboards, and role-aware API access.
-          </p>
-        </div>
-
-        <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
-          <CardHeader>
-            <CardTitle>Create your first organization</CardTitle>
-            <CardDescription>
-              This only runs once for your account unless you create additional orgs later.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setSetupError(null);
-                startProvisioning(async () => {
-                  try {
-                    const slug = slugify(organizationName);
-
-                    if (!slug) {
-                      setSetupError('Please choose an organization name.');
-                      return;
-                    }
-
-                    await apiClient.createOrganization({
-                      name: organizationName,
-                      slug,
-                    });
-                    router.refresh();
-                  } catch (error) {
-                    setSetupError(getErrorMessage(error));
-                  }
-                });
-              }}
-            >
-              <Input
-                value={organizationName}
-                onChange={(event) => setOrganizationName(event.target.value)}
-                placeholder="Acme Platform"
-                required
-              />
-              {setupError ? (
-                <Alert variant="destructive">
-                  <AlertTitle>Organization setup failed</AlertTitle>
-                  <AlertDescription>{setupError}</AlertDescription>
-                </Alert>
-              ) : null}
-              <Button type="submit" disabled={isProvisioning}>
-                {isProvisioning ? 'Provisioning organization...' : 'Create organization'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!hasActiveWorkspace) {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <Badge>Workspace Selection</Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Choose a workspace to continue
-          </h1>
-          <p className="max-w-4xl text-base leading-7 text-slate-300">
-            This account already belongs to{' '}
-            {organizations.length === 1 ? 'an organization' : 'multiple organizations'}, but no
-            active workspace is selected for the current session yet. Pick the correct organization
-            below to continue.
-          </p>
-        </div>
-
-        <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
-          <CardHeader>
-            <CardTitle>Select an active workspace</CardTitle>
-            <CardDescription>
-              Member management, invitations, and role-aware access all follow the active workspace
-              in your current session.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {organizations.map((organization) => (
-              <div
-                key={organization.id}
-                className="flex flex-col gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground md:flex-row md:items-center md:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-white">{organization.name}</p>
-                  <p className="truncate text-muted-foreground">{organization.slug}</p>
-                </div>
-                <Button
-                  variant="secondary"
-                  disabled={isSelectingWorkspace}
-                  onClick={() => {
-                    setWorkspaceSelectionError(null);
-                    startSelectingWorkspace(async () => {
-                      try {
-                        const response = (await authClient.organization.setActive({
-                          organizationId: organization.id,
-                        })) as {
-                          error?: {
-                            message?: string;
-                          } | null;
-                        };
-
-                        if (response.error) {
-                          setWorkspaceSelectionError(
-                            response.error.message ?? 'Unable to switch organization.',
-                          );
-                          return;
-                        }
-
-                        router.refresh();
-                      } catch (error) {
-                        setWorkspaceSelectionError(getErrorMessage(error));
-                      }
-                    });
-                  }}
-                >
-                  {isSelectingWorkspace ? 'Switching...' : 'Use this workspace'}
-                </Button>
-              </div>
-            ))}
-            {workspaceSelectionError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Workspace switch failed</AlertTitle>
-                <AlertDescription>{workspaceSelectionError}</AlertDescription>
-              </Alert>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const activeOrganization = effectiveViewer.organization;
 
   if (!activeOrganization) {
-    return null;
+    return (
+      <div className="space-y-8">
+        <div className="space-y-3">
+          <Badge>Workspace Required</Badge>
+          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            Finish onboarding
+          </h1>
+          <p className="max-w-4xl text-base leading-7 text-slate-300">
+            Choose an invited workspace or create your first workspace before managing teammates.
+          </p>
+        </div>
+
+        <Alert>
+          <AlertTitle>No active workspace selected</AlertTitle>
+          <AlertDescription>
+            <Link className="font-semibold text-cyan-200 hover:text-cyan-100" href="/onboarding">
+              Continue onboarding
+            </Link>{' '}
+            to activate the right workspace for this session.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (

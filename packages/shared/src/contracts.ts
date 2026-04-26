@@ -104,6 +104,29 @@ export const UsersWorkspaceDtoSchema = z.object({
   invitations: z.array(PendingInvitationDtoSchema),
 });
 
+export const InvitationPreviewDtoSchema = z.object({
+  id: z.uuid(),
+  email: z.string().email(),
+  role: AuthRoleSchema,
+  status: z.string(),
+  expiresAt: z.iso.datetime(),
+  organizationName: z.string().min(1),
+});
+
+export const OnboardingNextStepSchema = z.enum([
+  'ready',
+  'join-invitation',
+  'select-workspace',
+  'create-workspace',
+]);
+
+export const OnboardingStateDtoSchema = z.object({
+  viewer: CurrentUserDtoSchema,
+  pendingInvitations: z.array(InvitationPreviewDtoSchema),
+  nextStep: OnboardingNextStepSchema,
+  canCreateWorkspace: z.boolean(),
+});
+
 export const SignInInputSchema = z.object({
   email: z
     .string()
@@ -114,7 +137,7 @@ export const SignInInputSchema = z.object({
   redirectTo: z.string().trim().optional(),
 });
 
-export const SignUpInputSchema = z.object({
+export const AccountSignUpInputSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z
     .string()
@@ -122,14 +145,8 @@ export const SignUpInputSchema = z.object({
     .email()
     .transform((value) => value.toLowerCase()),
   password: z.string().min(8).max(128),
-  organizationName: z.string().trim().min(2).max(120),
-  organizationSlug: z
-    .string()
-    .trim()
-    .min(2)
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Organization slug must be kebab-case'),
   redirectTo: z.string().trim().optional(),
+  invitationId: z.uuid().optional(),
 });
 
 export const CreateInvitationInputSchema = z.object({
@@ -159,8 +176,14 @@ export const CreateOrganizationInputSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Organization slug must be kebab-case'),
 });
 
+export const CreateWorkspaceInputSchema = CreateOrganizationInputSchema;
+
 export const CreateOrganizationResultDtoSchema = z.object({
   organizationId: z.uuid(),
+});
+
+export const CreateWorkspaceResultDtoSchema = z.object({
+  workspaceId: z.uuid(),
 });
 
 export const CreateInvitationResultDtoSchema = z.object({
@@ -232,12 +255,17 @@ export type WebhookEndpointDto = z.infer<typeof WebhookEndpointDtoSchema>;
 export type WebhookEndpointListDto = z.infer<typeof WebhookEndpointListDtoSchema>;
 export type CurrentUserDto = z.infer<typeof CurrentUserDtoSchema>;
 export type UsersWorkspaceDto = z.infer<typeof UsersWorkspaceDtoSchema>;
+export type InvitationPreviewDto = z.infer<typeof InvitationPreviewDtoSchema>;
+export type OnboardingNextStep = z.infer<typeof OnboardingNextStepSchema>;
+export type OnboardingStateDto = z.infer<typeof OnboardingStateDtoSchema>;
 export type SignInInput = z.infer<typeof SignInInputSchema>;
-export type SignUpInput = z.infer<typeof SignUpInputSchema>;
+export type AccountSignUpInput = z.infer<typeof AccountSignUpInputSchema>;
 export type CreateInvitationInput = z.infer<typeof CreateInvitationInputSchema>;
 export type CreateWebhookEndpointInput = z.infer<typeof CreateWebhookEndpointInputSchema>;
 export type CreateOrganizationInput = z.infer<typeof CreateOrganizationInputSchema>;
+export type CreateWorkspaceInput = z.infer<typeof CreateWorkspaceInputSchema>;
 export type CreateOrganizationResultDto = z.infer<typeof CreateOrganizationResultDtoSchema>;
+export type CreateWorkspaceResultDto = z.infer<typeof CreateWorkspaceResultDtoSchema>;
 export type CreateInvitationResultDto = z.infer<typeof CreateInvitationResultDtoSchema>;
 export type CreateWebhookEndpointResultDto = z.infer<typeof CreateWebhookEndpointResultDtoSchema>;
 export type DeleteWebhookEndpointResultDto = z.infer<typeof DeleteWebhookEndpointResultDtoSchema>;

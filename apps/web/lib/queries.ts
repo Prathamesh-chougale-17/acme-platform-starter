@@ -2,7 +2,14 @@
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import type { AuditLogListDto, CurrentUserDto, HealthDto, UsersWorkspaceDto } from '@acme/shared';
+import type {
+  AuditLogListDto,
+  CurrentUserDto,
+  HealthDto,
+  InvitationPreviewDto,
+  OnboardingStateDto,
+  UsersWorkspaceDto,
+} from '@acme/shared';
 
 import { apiClient } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-keys';
@@ -18,6 +25,22 @@ export const useCurrentUserQuery = (): UseQueryResult<CurrentUserDto> =>
   useQuery({
     queryKey: queryKeys.me,
     queryFn: apiClient.getMe,
+  });
+
+export const useOnboardingQuery = (): UseQueryResult<OnboardingStateDto> =>
+  useQuery({
+    queryKey: queryKeys.onboarding,
+    queryFn: apiClient.getOnboardingState,
+  });
+
+export const useInvitationPreviewQuery = (
+  invitationId: string | undefined,
+): UseQueryResult<InvitationPreviewDto> =>
+  useQuery({
+    queryKey: queryKeys.invitations.preview(invitationId ?? 'missing'),
+    queryFn: () => apiClient.getInvitationPreview(invitationId!),
+    enabled: Boolean(invitationId),
+    retry: false,
   });
 
 export const useUsersWorkspaceQuery = (enabled = true): UseQueryResult<UsersWorkspaceDto> =>

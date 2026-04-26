@@ -54,7 +54,7 @@ export function HeaderMenu({
       return 'Choose workspace';
     }
 
-    return 'No workspace yet';
+    return 'Finish onboarding';
   }, [currentUser]);
 
   const workspaceHint = useMemo(() => {
@@ -74,7 +74,7 @@ export function HeaderMenu({
       return 'Select your workspace';
     }
 
-    return 'Create your first workspace';
+    return 'Workspace setup';
   }, [currentUser]);
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export function HeaderMenu({
                       : currentUser && currentUser.organizations.length > 0
                         ? 'You have access to workspaces, but none is active yet.'
                         : currentUser
-                          ? 'Create your first organization from the Users page.'
+                          ? 'Create or join a workspace from onboarding.'
                           : 'Jump between the main sections without filling the header with links.'}
                   </p>
                 </div>
@@ -269,8 +269,13 @@ export function HeaderMenu({
                   </div>
                 ) : (
                   <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                    Create an organization from the Users page when you are ready to start inviting
-                    teammates.
+                    <Link
+                      className="font-semibold text-cyan-200 hover:text-cyan-100"
+                      href="/onboarding"
+                    >
+                      Continue onboarding
+                    </Link>{' '}
+                    to create or join a workspace.
                   </div>
                 )}
 

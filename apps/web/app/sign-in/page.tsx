@@ -4,6 +4,9 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { getCurrentUser } from '@/lib/auth';
 
+const getSafeRedirectTo = (value: string | undefined) =>
+  value && value.startsWith('/') && !value.startsWith('//') ? value : undefined;
+
 export default async function SignInPage({
   searchParams,
 }: {
@@ -13,20 +16,21 @@ export default async function SignInPage({
     getCurrentUser(),
     searchParams ?? Promise.resolve(undefined),
   ]);
-  const redirectTo =
+  const redirectTo = getSafeRedirectTo(
     resolvedSearchParams && typeof resolvedSearchParams.redirectTo === 'string'
       ? resolvedSearchParams.redirectTo
-      : undefined;
+      : undefined,
+  );
 
   if (currentUser) {
-    redirect('/users');
+    redirect((redirectTo ?? '/onboarding') as never);
   }
 
   return (
     <AuthShell
       eyebrow="Authentication"
       title="Sign in to your workspace"
-      description="Use your account session to access the organization workspace, operational dashboards, and member management APIs."
+      description="Use your account session to access your workspace, operational dashboards, and member management APIs."
       alternateHref="/sign-up"
       alternateLabel="Need an account? Create one"
     >

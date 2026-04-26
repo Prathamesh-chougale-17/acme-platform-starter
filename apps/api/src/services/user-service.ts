@@ -6,9 +6,11 @@ import type {
   AuditLogListDto,
   CreateInvitationInput,
   CreateInvitationResultDto,
-  CreateOrganizationInput,
-  CreateOrganizationResultDto,
+  CreateWorkspaceInput,
+  CreateWorkspaceResultDto,
   CurrentUserDto,
+  InvitationPreviewDto,
+  OnboardingStateDto,
   UsersWorkspaceDto,
   AcceptInvitationResultDto,
 } from '@acme/shared';
@@ -90,6 +92,8 @@ const getBetterAuthError = (
 const toIsoString = (value: Date | string): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
 type AuditRequestMetadata = {
   requestId?: string | null;
   ipAddress?: string | null;
@@ -121,6 +125,44 @@ export class UserService {
 
   getCurrentUser(authContext: ResolvedAuthContext): CurrentUserDto {
     return toCurrentUserDto(authContext);
+  }
+
+  async getOnboardingState(authContext: ResolvedAuthContext): Promise<OnboardingStateDto> {
+    const pendingInvitations = await this.usersRepository.listPendingInvitationsByEmail(
+      authContext.user.email,
+    );
+
+    const nextStep: OnboardingStateDto['nextStep'] = authContext.organizationId
+      ? 'ready'
+      : authContext.organizations.length > 0
+        ? 'select-workspace'
+        : pendingInvitations.length > 0
+          ? 'join-invitation'
+          : 'create-workspace';
+
+    return {
+      viewer: toCurrentUserDto(authContext),
+      pendingInvitations,
+      nextStep,
+      canCreateWorkspace: authContext.organizations.length === 0,
+    };
+  }
+
+  async getInvitationPreview(invitationId: string): Promise<InvitationPreviewDto> {
+    const invitation = await this.usersRepository.findInvitationById(invitationId);
+
+    if (!invitation) {
+      throw new AppError(404, 'NOT_FOUND', 'Invitation not found');
+    }
+
+    return {
+      id: invitation.id,
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+      organizationName: invitation.organizationName,
+    };
   }
 
   async getUsersWorkspace(authContext: ResolvedAuthContext): Promise<UsersWorkspaceDto> {
@@ -236,12 +278,25 @@ export class UserService {
     }
   }
 
-  async createOrganization(
+  async createWorkspace(
     authContext: ResolvedAuthContext,
     requestHeaders: Headers,
-    input: CreateOrganizationInput,
+    input: CreateWorkspaceInput,
     auditRequestMetadata: AuditRequestMetadata,
-  ): Promise<CreateOrganizationResultDto> {
+  ): Promise<CreateWorkspaceResultDto> {
+    const hasAnyMembership =
+      authContext.organizations.length > 0 ||
+      Boolean(authContext.organizationId) ||
+      (await this.usersRepository.hasAnyMembership(authContext.user.id));
+
+    if (hasAnyMembership) {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'This starter allows one self-created workspace per account by default.',
+      );
+    }
+
     try {
       const organization = await auth.api.createOrganization({
         body: {
@@ -314,7 +369,7 @@ export class UserService {
       });
 
       return {
-        organizationId,
+        workspaceId: organizationId,
       };
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -354,7 +409,41 @@ export class UserService {
       throw new AppError(404, 'NOT_FOUND', 'Invitation not found');
     }
 
+    if (normalizeEmail(invitation.email) !== normalizeEmail(authContext.user.email)) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        `This invitation is for ${invitation.email}. Sign in with that email address to continue.`,
+      );
+    }
+
+    const isAlreadyMember = authContext.organizations.some(
+      (organization) => organization.id === invitation.organizationId,
+    );
+
     try {
+      if (isAlreadyMember) {
+        await auth.api.setActiveOrganization({
+          body: {
+            organizationId: invitation.organizationId,
+          },
+          headers: requestHeaders,
+        });
+
+        return {
+          invitationId: invitation.id,
+          organizationId: invitation.organizationId,
+        };
+      }
+
+      if (invitation.status !== 'pending') {
+        throw new AppError(
+          409,
+          'CONFLICT',
+          'This invitation has already been used or is no longer pending.',
+        );
+      }
+
       await auth.api.acceptInvitation({
         body: {
           invitationId,

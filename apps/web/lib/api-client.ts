@@ -3,20 +3,24 @@ import {
   AuditLogListDtoSchema,
   CreateInvitationInputSchema,
   CreateInvitationResultDtoSchema,
-  CreateOrganizationInputSchema,
-  CreateOrganizationResultDtoSchema,
+  CreateWorkspaceInputSchema,
+  CreateWorkspaceResultDtoSchema,
   CurrentUserDtoSchema,
   HealthDtoSchema,
+  InvitationPreviewDtoSchema,
+  OnboardingStateDtoSchema,
   UsersWorkspaceDtoSchema,
   type AcceptInvitationResultDto,
   type AuditLogListDto,
   type ApiResponse,
   type CreateInvitationInput,
   type CreateInvitationResultDto,
-  type CreateOrganizationInput,
-  type CreateOrganizationResultDto,
+  type CreateWorkspaceInput,
+  type CreateWorkspaceResultDto,
   type CurrentUserDto,
   type HealthDto,
+  type InvitationPreviewDto,
+  type OnboardingStateDto,
   type UsersWorkspaceDto,
 } from '@acme/shared';
 
@@ -109,6 +113,14 @@ const request = async <T>(
 export const apiClient = {
   getHealth: () => request<HealthDto>('/api/v1/health', { method: 'GET' }, HealthDtoSchema),
   getMe: () => request<CurrentUserDto>('/api/v1/me', { method: 'GET' }, CurrentUserDtoSchema),
+  getOnboardingState: () =>
+    request<OnboardingStateDto>('/api/v1/onboarding', { method: 'GET' }, OnboardingStateDtoSchema),
+  getInvitationPreview: (invitationId: string) =>
+    request<InvitationPreviewDto>(
+      `/api/v1/invitations/${encodeURIComponent(invitationId)}/preview`,
+      { method: 'GET' },
+      InvitationPreviewDtoSchema,
+    ),
   getUsersWorkspace: () =>
     request<UsersWorkspaceDto>('/api/v1/users', { method: 'GET' }, UsersWorkspaceDtoSchema),
   getAuditLogs: (limit = 25) =>
@@ -117,18 +129,18 @@ export const apiClient = {
       { method: 'GET' },
       AuditLogListDtoSchema,
     ),
-  createOrganization: (input: CreateOrganizationInput) =>
-    request<CreateOrganizationResultDto>(
-      '/api/v1/organizations',
+  createWorkspace: (input: CreateWorkspaceInput) =>
+    request<CreateWorkspaceResultDto>(
+      '/api/v1/workspaces',
       {
         method: 'POST',
-        body: JSON.stringify(CreateOrganizationInputSchema.parse(input)),
+        body: JSON.stringify(CreateWorkspaceInputSchema.parse(input)),
       },
-      CreateOrganizationResultDtoSchema,
+      CreateWorkspaceResultDtoSchema,
     ),
   createInvitation: (input: CreateInvitationInput) =>
     request<CreateInvitationResultDto>(
-      '/api/invitations',
+      '/api/v1/invitations',
       {
         method: 'POST',
         body: JSON.stringify(CreateInvitationInputSchema.parse(input)),

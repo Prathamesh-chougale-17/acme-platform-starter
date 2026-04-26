@@ -24,7 +24,7 @@ export default async function AcceptInvitePage({
       alternateHref="/sign-in"
       alternateLabel="Back to sign in"
     >
-      <AcceptInvitePanel invitationId={invitationId} isAuthenticated={Boolean(currentUser)} />
+      <AcceptInvitePanel invitationId={invitationId} viewer={currentUser} />
     </AuthShell>
   );
 }

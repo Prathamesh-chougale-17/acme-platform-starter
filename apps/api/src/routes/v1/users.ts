@@ -1,4 +1,4 @@
-import { CreateInvitationInputSchema, CreateOrganizationInputSchema } from '@acme/shared';
+import { CreateInvitationInputSchema, CreateWorkspaceInputSchema } from '@acme/shared';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -51,7 +51,8 @@ export const createUserRoutes = ({ userService }: { userService: UserService }) 
 
   router.use('/users', requireAuthenticatedUser());
   router.use('/me', requireAuthenticatedUser());
-  router.use('/organizations', requireAuthenticatedUser());
+  router.use('/onboarding', requireAuthenticatedUser());
+  router.use('/workspaces', requireAuthenticatedUser());
   router.use('/invitations/:invitationId/accept', requireAuthenticatedUser());
   router.use('/audit-logs', requireAuthenticatedUser());
   router.get('/users', async (c) => {
@@ -74,6 +75,34 @@ export const createUserRoutes = ({ userService }: { userService: UserService }) 
 
     return jsonSuccess(c, 200, userService.getCurrentUser(authContext));
   });
+
+  router.get('/onboarding', async (c) => {
+    const authContext = c.get('auth');
+
+    if (!authContext) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Authentication required');
+    }
+
+    const onboardingState = await userService.getOnboardingState(authContext);
+    return jsonSuccess(c, 200, onboardingState);
+  });
+
+  router.get(
+    '/invitations/:invitationId/preview',
+    zValidator('param', AcceptInvitationParamsSchema, (result) => {
+      if (!result.success) {
+        throw new AppError(400, 'VALIDATION_ERROR', 'Invitation id is invalid', {
+          issues: result.error.issues,
+        });
+      }
+    }),
+    async (c) => {
+      const { invitationId } = c.req.valid('param');
+      const invitation = await userService.getInvitationPreview(invitationId);
+
+      return jsonSuccess(c, 200, invitation);
+    },
+  );
 
   router.post(
     '/invitations',
@@ -106,8 +135,8 @@ export const createUserRoutes = ({ userService }: { userService: UserService }) 
   );
 
   router.post(
-    '/organizations',
-    zValidator('json', CreateOrganizationInputSchema, (result) => {
+    '/workspaces',
+    zValidator('json', CreateWorkspaceInputSchema, (result) => {
       if (!result.success) {
         throw new AppError(400, 'VALIDATION_ERROR', 'Request payload is invalid', {
           issues: result.error.issues,
@@ -123,14 +152,14 @@ export const createUserRoutes = ({ userService }: { userService: UserService }) 
 
       const payload = c.req.valid('json');
       const { requestHeaders, requestMetadata } = getAuditRequestMetadata(c);
-      const organization = await userService.createOrganization(
+      const workspace = await userService.createWorkspace(
         authContext,
         requestHeaders,
         payload,
         requestMetadata,
       );
 
-      return jsonSuccess(c, 201, organization);
+      return jsonSuccess(c, 201, workspace);
     },
   );
 

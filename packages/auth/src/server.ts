@@ -1,6 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { loadBetterAuthEnv, resolveServerFeatureFlags } from '@acme/config';
-import { getDb } from '@acme/db';
+import { createUsersRepository, getDb } from '@acme/db';
 import { enqueueInviteEmailJob } from '@acme/jobs';
 import { APP_NAME } from '@acme/shared';
 import { betterAuth } from 'better-auth';
@@ -12,6 +12,7 @@ import { createAuthMailer } from './mailer';
 const env = loadBetterAuthEnv(process.env);
 const mailer = createAuthMailer(env);
 const featureFlags = resolveServerFeatureFlags(process.env);
+const usersRepository = createUsersRepository();
 
 const trustedOrigins = Array.from(
   new Set([env.BETTER_AUTH_URL, env.APP_ORIGIN, env.API_CORS_ORIGIN].filter(Boolean)),
@@ -62,7 +63,8 @@ export const auth = betterAuth({
   plugins: [
     nextCookies(),
     organization({
-      allowUserToCreateOrganization: true,
+      allowUserToCreateOrganization: async (user) =>
+        !(await usersRepository.hasAnyMembership(user.id)),
       cancelPendingInvitationsOnReInvite: true,
       creatorRole: 'owner',
       requireEmailVerificationOnInvitation: false,

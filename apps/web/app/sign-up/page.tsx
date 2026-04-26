@@ -4,6 +4,9 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { SignUpForm } from '@/components/auth/sign-up-form';
 import { getCurrentUser } from '@/lib/auth';
 
+const getSafeRedirectTo = (value: string | undefined) =>
+  value && value.startsWith('/') && !value.startsWith('//') ? value : undefined;
+
 export default async function SignUpPage({
   searchParams,
 }: {
@@ -13,24 +16,30 @@ export default async function SignUpPage({
     getCurrentUser(),
     searchParams ?? Promise.resolve(undefined),
   ]);
-  const redirectTo =
+  const redirectTo = getSafeRedirectTo(
     resolvedSearchParams && typeof resolvedSearchParams.redirectTo === 'string'
       ? resolvedSearchParams.redirectTo
-      : undefined;
+      : undefined,
+  );
   const invitationId =
     resolvedSearchParams && typeof resolvedSearchParams.invitationId === 'string'
       ? resolvedSearchParams.invitationId
       : undefined;
 
+  const invitationRedirect = invitationId
+    ? `/accept-invite?invitationId=${encodeURIComponent(invitationId)}`
+    : undefined;
+  const signedInRedirect = redirectTo ?? invitationRedirect ?? '/onboarding';
+
   if (currentUser) {
-    redirect('/users');
+    redirect(signedInRedirect as never);
   }
 
   return (
     <AuthShell
       eyebrow="Authentication"
       title="Create your platform account"
-      description="Self-serve sign-up provisions the first organization. Invitation-based onboarding reuses the same account flow and joins the invited workspace."
+      description="Create your account first. Workspace setup or invitation acceptance happens immediately after."
       alternateHref="/sign-in"
       alternateLabel="Already have an account? Sign in"
     >

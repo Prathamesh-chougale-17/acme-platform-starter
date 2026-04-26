@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { CreateInvitationInputSchema, SignUpInputSchema, UserDtoSchema } from './contracts';
+import { AccountSignUpInputSchema, CreateInvitationInputSchema, UserDtoSchema } from './contracts';
 
 describe('shared contracts', () => {
   it('normalizes the sign-up payload', () => {
-    const result = SignUpInputSchema.parse({
+    const result = AccountSignUpInputSchema.parse({
       name: 'Ada Lovelace',
       email: 'ADA@EXAMPLE.COM',
       password: 'super-secure-password',
-      organizationName: 'Acme Platform',
-      organizationSlug: 'acme-platform',
     });
 
     expect(result.email).toBe('ada@example.com');

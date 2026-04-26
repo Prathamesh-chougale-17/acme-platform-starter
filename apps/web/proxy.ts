@@ -2,8 +2,11 @@ import { getSessionCookie } from 'better-auth/cookies';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const protectedPrefixes = ['/users', '/health'];
+const protectedPrefixes = ['/users', '/health', '/onboarding'];
 const authRoutes = ['/sign-in', '/sign-up', '/forgot-password'];
+
+const getSafeRedirectPath = (value: string | null) =>
+  value && value.startsWith('/') && !value.startsWith('//') ? value : '/onboarding';
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -16,12 +19,21 @@ export function proxy(request: NextRequest) {
   }
 
   if (hasSession && authRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL('/users', request.url));
+    return NextResponse.redirect(
+      new URL(getSafeRedirectPath(request.nextUrl.searchParams.get('redirectTo')), request.url),
+    );
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/users/:path*', '/health/:path*', '/sign-in', '/sign-up', '/forgot-password'],
+  matcher: [
+    '/users/:path*',
+    '/health/:path*',
+    '/onboarding/:path*',
+    '/sign-in',
+    '/sign-up',
+    '/forgot-password',
+  ],
 };

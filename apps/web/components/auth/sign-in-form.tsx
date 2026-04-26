@@ -16,7 +16,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string | undefined }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const targetPath = useMemo(() => redirectTo || '/users', [redirectTo]);
+  const targetPath = useMemo(() => redirectTo || '/onboarding', [redirectTo]);
 
   return (
     <form

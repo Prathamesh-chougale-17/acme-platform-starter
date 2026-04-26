@@ -2,81 +2,45 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
+import type { CurrentUserDto } from '@acme/shared';
 import { Button } from '@acme/ui';
 
 import { apiClient } from '@/lib/api-client';
-import { authClient } from '@/lib/auth-client';
+import { useInvitationPreviewQuery } from '@/lib/queries';
+import { SignOutButton } from '@/components/sign-out-button';
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to accept the invitation right now.';
 
-type InvitationSummary = {
-  email: string | undefined;
-  organizationName: string | undefined;
-  role: string | undefined;
-};
-
-type InvitationLookupResponse = {
-  data:
-    | {
-        email?: string;
-        organizationName?: string;
-        role?: string;
-      }
-    | null
-    | undefined;
-  error?: {
-    message?: string;
-  } | null;
-};
-
 export function AcceptInvitePanel({
   invitationId,
-  isAuthenticated,
+  viewer,
 }: {
   invitationId: string | undefined;
-  isAuthenticated: boolean;
+  viewer: CurrentUserDto | null;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<InvitationSummary | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!invitationId) {
-      return;
-    }
-
-    void (async () => {
-      try {
-        const response = (await authClient.organization.getInvitation({
-          query: {
-            id: invitationId,
-          },
-        })) as InvitationLookupResponse;
-
-        if (response.error) {
-          setError(response.error.message ?? 'Unable to load invitation details.');
-          return;
-        }
-
-        if (response.data) {
-          setSummary({
-            email: response.data.email,
-            organizationName: response.data.organizationName,
-            role: response.data.role,
-          });
-        }
-      } catch (caughtError: unknown) {
-        setError(getErrorMessage(caughtError));
-      }
-    })();
-  }, [invitationId]);
+  const invitationPreviewQuery = useInvitationPreviewQuery(invitationId);
+  const invitation = invitationPreviewQuery.data;
+  const isAuthenticated = Boolean(viewer);
+  const isWrongAccount =
+    Boolean(viewer && invitation) &&
+    viewer!.user.email.trim().toLowerCase() !== invitation!.email.trim().toLowerCase();
 
   if (!invitationId) {
     return <p className="text-sm text-rose-300">Invitation id missing from the URL.</p>;
+  }
+
+  if (invitationPreviewQuery.isPending) {
+    return <p className="text-sm text-slate-300">Loading invitation details...</p>;
+  }
+
+  if (invitationPreviewQuery.isError || !invitation) {
+    return <p className="text-sm text-rose-300">Unable to load invitation details.</p>;
   }
 
   if (!isAuthenticated) {
@@ -84,9 +48,13 @@ export function AcceptInvitePanel({
 
     return (
       <div className="space-y-4">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
+          <p className="font-semibold text-white">{invitation.organizationName}</p>
+          <p className="mt-2">Invitee: {invitation.email}</p>
+          <p className="mt-1">Role: {invitation.role}</p>
+        </div>
         <p className="text-sm leading-6 text-slate-300">
-          Sign in or create an account with the invited email address before accepting this
-          invitation.
+          Sign in or create an account with the invited email address before accepting this invite.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href={`/sign-in?redirectTo=${encodeURIComponent(redirectTo)}` as never}>
@@ -104,15 +72,30 @@ export function AcceptInvitePanel({
     );
   }
 
+  if (isWrongAccount) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
+          <p className="font-semibold text-white">{invitation.organizationName}</p>
+          <p className="mt-2">Invitee: {invitation.email}</p>
+          <p className="mt-1">Signed in as: {viewer?.user.email}</p>
+        </div>
+        <p className="text-sm text-rose-300">
+          This invitation is for {invitation.email}. Switch accounts to continue.
+        </p>
+        <SignOutButton variant="secondary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {summary ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-          <p className="font-semibold text-white">{summary.organizationName ?? 'Invitation'}</p>
-          <p className="mt-2">Invitee: {summary.email ?? 'Unknown email'}</p>
-          <p className="mt-1">Role: {summary.role ?? 'member'}</p>
-        </div>
-      ) : null}
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
+        <p className="font-semibold text-white">{invitation.organizationName}</p>
+        <p className="mt-2">Invitee: {invitation.email}</p>
+        <p className="mt-1">Role: {invitation.role}</p>
+        <p className="mt-1">Status: {invitation.status}</p>
+      </div>
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
       <Button
         disabled={isPending}

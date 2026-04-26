@@ -7,9 +7,11 @@ import type {
   AuditLogListDto,
   AuthRole,
   CreateInvitationResultDto,
-  CreateOrganizationResultDto,
+  CreateWorkspaceResultDto,
   CurrentUserDto,
   HealthDto,
+  InvitationPreviewDto,
+  OnboardingStateDto,
   WebhookEndpointListDto,
   UsersWorkspaceDto,
   AcceptInvitationResultDto,
@@ -155,7 +157,7 @@ const createRepositories = (): {
   const invitations = [
     {
       id: '6a9d0f58-286f-4f69-9dd1-a8f44f1546f0',
-      email: 'grace@example.com',
+      email: authUser.email,
       role: 'member' as const,
       status: 'pending',
       expiresAt: new Date('2026-01-03T10:00:00.000Z').toISOString(),
@@ -177,7 +179,7 @@ const createRepositories = (): {
           role: 'owner',
         },
         targetUserId: null,
-        targetEmail: 'grace@example.com',
+        targetEmail: authUser.email,
         targetInvitationId: invitations[0]!.id,
         requestId: 'request-1',
         ipAddress: '127.0.0.1',
@@ -206,6 +208,10 @@ const createRepositories = (): {
 
   return {
     usersRepository: {
+      hasAnyMembership: vi.fn(
+        async () =>
+          Boolean(currentAuthContext.organizationId) || currentAuthContext.organizations.length > 0,
+      ),
       findInvitationById: vi.fn(async (invitationId: string) =>
         invitationId === invitations[0]!.id
           ? {
@@ -223,6 +229,22 @@ const createRepositories = (): {
       ),
       listOrganizationMembers: vi.fn(async () => members),
       listPendingInvitations: vi.fn(async () => invitations),
+      listPendingInvitationsByEmail: vi.fn(async (email: string) =>
+        invitations
+          .filter(
+            (invitation) =>
+              invitation.status === 'pending' &&
+              invitation.email.toLowerCase() === email.trim().toLowerCase(),
+          )
+          .map((invitation) => ({
+            id: invitation.id,
+            email: invitation.email,
+            role: invitation.role,
+            status: invitation.status,
+            expiresAt: invitation.expiresAt,
+            organizationName: baseOrganization.name,
+          })),
+      ),
       ping: vi.fn(async () => true),
     },
     auditRepository: {
@@ -393,6 +415,54 @@ describe('api routes', () => {
     expect(body.data.role).toBe('owner');
   });
 
+  it('returns onboarding state with pending invitations before workspace creation', async () => {
+    currentAuthContext = {
+      ...authContext,
+      organizationId: null,
+      organization: null,
+      organizations: [],
+      role: null,
+      session: {
+        ...authContext.session,
+        activeOrganizationId: null,
+      },
+    };
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/onboarding', {
+      headers: {
+        cookie: 'session=valid',
+      },
+    });
+    const body = (await response.json()) as ApiResponse<OnboardingStateDto>;
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful onboarding response');
+    }
+    expect(body.data.nextStep).toBe('join-invitation');
+    expect(body.data.canCreateWorkspace).toBe(true);
+    expect(body.data.pendingInvitations).toHaveLength(1);
+  });
+
+  it('returns a public safe invitation preview', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request(
+      '/api/v1/invitations/6a9d0f58-286f-4f69-9dd1-a8f44f1546f0/preview',
+    );
+    const body = (await response.json()) as ApiResponse<InvitationPreviewDto>;
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    if (!body.success) {
+      throw new Error('Expected a successful invitation preview response');
+    }
+    expect(body.data.email).toBe(authUser.email);
+    expect(body.data.organizationName).toBe(baseOrganization.name);
+  });
+
   it('creates invitations with validated payloads and appends an audit log', async () => {
     const app = createTestApp(repositories);
 
@@ -426,7 +496,7 @@ describe('api routes', () => {
     );
   });
 
-  it('creates organizations through the server-owned endpoint and appends an audit log', async () => {
+  it('creates workspaces through the server-owned endpoint and appends an audit log', async () => {
     currentAuthContext = {
       ...authContext,
       organizationId: null,
@@ -440,7 +510,7 @@ describe('api routes', () => {
     };
     const app = createTestApp(repositories);
 
-    const response = await app.request('/api/v1/organizations', {
+    const response = await app.request('/api/v1/workspaces', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -452,14 +522,14 @@ describe('api routes', () => {
       }),
     });
 
-    const body = (await response.json()) as ApiResponse<CreateOrganizationResultDto>;
+    const body = (await response.json()) as ApiResponse<CreateWorkspaceResultDto>;
 
     expect(response.status).toBe(201);
     expect(body.success).toBe(true);
     if (!body.success) {
-      throw new Error('Expected a successful organization response');
+      throw new Error('Expected a successful workspace response');
     }
-    expect(body.data.organizationId).toBe('58e7783f-8921-4dd3-81ed-cb82f37c1cd2');
+    expect(body.data.workspaceId).toBe('58e7783f-8921-4dd3-81ed-cb82f37c1cd2');
     expect(createOrganizationMock).toHaveBeenCalledWith(
       expect.objectContaining({
         body: {
@@ -483,6 +553,27 @@ describe('api routes', () => {
         organizationId: '58e7783f-8921-4dd3-81ed-cb82f37c1cd2',
       }),
     );
+  });
+
+  it('blocks workspace creation when the user already has a membership', async () => {
+    const app = createTestApp(repositories);
+
+    const response = await app.request('/api/v1/workspaces', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: 'session=valid',
+      },
+      body: JSON.stringify({
+        name: 'Another Org',
+        slug: 'another-org',
+      }),
+    });
+    const body = (await response.json()) as ApiResponse<never>;
+
+    expect(response.status).toBe(409);
+    expect(body.success).toBe(false);
+    expect(createOrganizationMock).not.toHaveBeenCalled();
   });
 
   it('accepts invitations through the server-owned endpoint and appends an audit log', async () => {
@@ -536,9 +627,44 @@ describe('api routes', () => {
       expect.objectContaining({
         eventType: 'invitation.accepted',
         organizationId: baseOrganization.id,
-        targetEmail: 'grace@example.com',
+        targetEmail: authUser.email,
       }),
     );
+  });
+
+  it('rejects invitation acceptance when the signed-in email does not match the invite', async () => {
+    currentAuthContext = {
+      ...authContext,
+      user: {
+        ...authUser,
+        email: 'wrong@example.com',
+      },
+      organizationId: null,
+      organization: null,
+      organizations: [],
+      role: null,
+      session: {
+        ...authContext.session,
+        activeOrganizationId: null,
+      },
+    };
+    const app = createTestApp(repositories);
+
+    const response = await app.request(
+      '/api/v1/invitations/6a9d0f58-286f-4f69-9dd1-a8f44f1546f0/accept',
+      {
+        method: 'POST',
+        headers: {
+          cookie: 'session=valid',
+        },
+      },
+    );
+    const body = (await response.json()) as ApiResponse<never>;
+
+    expect(response.status).toBe(403);
+    expect(body.success).toBe(false);
+    expect(acceptInvitationMock).not.toHaveBeenCalled();
+    expect(repositories.auditRepository.appendAuditLog).not.toHaveBeenCalled();
   });
 
   it('returns a conflict when Better Auth reports an existing invitation without writing an audit row', async () => {
