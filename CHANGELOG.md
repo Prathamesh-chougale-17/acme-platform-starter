@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.0...v0.3.1) (2026-04-28)
+
+### Features
+
+- enhance error handling and observability configuration across the platform ([f3b0c4a](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/f3b0c4acd0a2954ef6dbc2abe2aaf42703942b5b))
+- **versioning:** implement app version updater and add configuration for version bumps ([0059123](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/0059123090152a872c9a4203779266d3bb821402))
+
 ## [0.3.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.2.0...v0.3.0) (2026-04-28)
 
 ### Features
