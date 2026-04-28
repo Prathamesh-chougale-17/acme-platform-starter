@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.7...v0.1.8) (2026-04-28)
+
+### Features
+
+- add @clack/prompts dependency and update CLI for prompt skipping ([502fd5f](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/502fd5fa8620adac7d477e7d4e41a9ac906e94a2))
+- add Prettier to lint-staged for automatic formatting ([4e0059d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/4e0059d962a347861cd8f267f689d1c08b6b978b))
+
+### Bug Fixes
+
+- improve logging message formatting in create-package-cli ([b1946a2](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/b1946a2532eedd966e9b9eba8cc4da38faf75f31))
+
 ### [0.1.7](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.6...v0.1.7) (2026-04-28)
 
 ### Features
