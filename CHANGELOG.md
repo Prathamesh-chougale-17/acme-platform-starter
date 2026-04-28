@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.1...v0.3.2) (2026-04-28)
+
+### Features
+
+- remove observability and jobs features from the project structure ([23918bc](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/23918bcd724512d0b5a3167cd426a06c27cbfce8))
+
 ### [0.3.1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.0...v0.3.1) (2026-04-28)
 
 ### Features
