@@ -26,6 +26,12 @@
       "sourceType": "github",
       "computedHash": "04c1df896cc2c9ef824d618b95d21686c5b8e24e5cb32b3d6fe9d97d4b661536"
     },
+    "release-skills": {
+      "source": "jimliu/baoyu-skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/release-skills/SKILL.md",
+      "computedHash": "396a20cfd3869d85ff3a915ee9b272174ca99ef01cb749597c421622d042885c"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
