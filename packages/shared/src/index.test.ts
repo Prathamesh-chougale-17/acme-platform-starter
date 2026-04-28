@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +12,13 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const rootPackageJson = JSON.parse(
   readFileSync(resolve(currentDir, '../../../package.json'), 'utf8'),
 ) as { version: string };
+const require = createRequire(import.meta.url);
+const appVersionUpdater = require(
+  resolve(currentDir, '../../../scripts/standard-version-app-version-updater.cjs'),
+) as {
+  readVersion(contents: string): string;
+  writeVersion(contents: string, version: string): string;
+};
 
 describe('shared contracts', () => {
   it('normalizes the sign-up payload', () => {
@@ -50,5 +58,15 @@ describe('shared contracts', () => {
 
   it('keeps the runtime version aligned with the package version', () => {
     expect(APP_VERSION).toBe(rootPackageJson.version);
+  });
+
+  it('lets standard-version update the runtime version constant', () => {
+    const source =
+      "export const APP_VERSION = '1.2.3';\nexport const SUPPORT_EMAIL = 'support@example.com';\n";
+
+    expect(appVersionUpdater.readVersion(source)).toBe('1.2.3');
+    expect(appVersionUpdater.writeVersion(source, '1.2.4')).toBe(
+      "export const APP_VERSION = '1.2.4';\nexport const SUPPORT_EMAIL = 'support@example.com';\n",
+    );
   });
 });
