@@ -194,7 +194,9 @@ const main = async () => {
     );
   } else {
     console.log('\nNote: Async jobs / Redis was not selected. The code remains in place but is');
-    console.log('automatically disabled when REDIS_URL is absent — no changes to the source needed.');
+    console.log(
+      'automatically disabled when REDIS_URL is absent — no changes to the source needed.',
+    );
   }
 
   if (!includeObservability) {
