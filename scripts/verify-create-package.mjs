@@ -128,13 +128,13 @@ assert.equal(
 const workspaceTempRoot = mkdtempSync(join(tmpdir(), 'create-acme-platform-verify-'));
 const directTarget = join(workspaceTempRoot, 'from-bin');
 
-runCommand(nodeCommand, [cliPath, directTarget]);
+runCommand(nodeCommand, [cliPath, directTarget, '--yes']);
 
 const directPackageJson = JSON.parse(readFileSync(join(directTarget, 'package.json'), 'utf8'));
 assert.equal(directPackageJson.name, 'from-bin');
 assert.equal(directPackageJson.private, true);
 
-const secondRunResult = runCommand(nodeCommand, [cliPath, directTarget], {
+const secondRunResult = runCommand(nodeCommand, [cliPath, directTarget, '--yes'], {
   captureOutput: true,
   expectFailure: true,
 });
@@ -144,7 +144,7 @@ assert.match(
   'CLI should fail with a clear non-empty directory message',
 );
 
-runCommand(nodeCommand, [cliPath, directTarget, '--force']);
+runCommand(nodeCommand, [cliPath, directTarget, '--force', '--yes']);
 
 const tarballResult = runCommand(npmCommand, ['pack', publishDir, '--json'], {
   cwd: workspaceTempRoot,
@@ -179,7 +179,7 @@ const installedCliPath = join(
 
 assert.ok(existsSync(installedCliPath), 'The packed tarball should install the scaffold CLI');
 
-runCommand(nodeCommand, [installedCliPath, tarballTarget], {
+runCommand(nodeCommand, [installedCliPath, tarballTarget, '--yes'], {
   cwd: installerDir,
 });
 

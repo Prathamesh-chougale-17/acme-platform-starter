@@ -186,6 +186,9 @@ const writePublishPackageJson = () => {
     publishConfig: {
       access: 'public',
     },
+    dependencies: {
+      '@clack/prompts': '^1.2.0',
+    },
   };
 
   writeFileSync(
