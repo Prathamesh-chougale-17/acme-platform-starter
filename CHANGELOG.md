@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.8...v0.2.0) (2026-04-28)
+
+### Features
+
+- add release-skills to automate versioning, changelog generation, and npm publishing ([f3a3cb6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/f3a3cb69bef9f556688805e628729d70b10b177d))
+
 ### [0.1.8](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.7...v0.1.8) (2026-04-28)
 
 ### Features
