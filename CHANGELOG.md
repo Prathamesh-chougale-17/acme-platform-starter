@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.2.0...v0.3.0) (2026-04-28)
+
+### Features
+
+- add pre-push hook to enforce release verification for tag pushes ([a14ed96](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/a14ed962ee01439cb3b585161f81d92ee42db094))
+- **cli:** implement CLI scaffolding and project setup wizard ([25f0c3a](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/25f0c3adc2a3ed4ea5d4d704a0e8c3d4dd66d047))
+
+### Bug Fixes
+
+- **template:** exclude packages/cli from scaffolded template output ([28d5ed7](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/28d5ed7a2912c59e2b67a88c9b4fe45701621807))
+
 ## [0.2.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.8...v0.2.0) (2026-04-28)
 
 ### Features
