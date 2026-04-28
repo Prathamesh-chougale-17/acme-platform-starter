@@ -1,6 +1,6 @@
 {
   "name": "acme-platform",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "license": "MIT",
   "repository": {
@@ -38,6 +38,7 @@
     "release:pack:dry-run": "pnpm release:build-package && npm pack --dry-run ./dist/create-acme-platform"
   },
   "devDependencies": {
+    "@clack/prompts": "^1.2.0",
     "@eslint/js": "^9.39.1",
     "@next/eslint-plugin-next": "16.2.3",
     "@playwright/test": "^1.59.1",

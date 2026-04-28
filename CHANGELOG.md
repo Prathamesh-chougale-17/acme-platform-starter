@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.6...v0.1.7) (2026-04-28)
+
+### Features
+
+- update onboarding flow and workspace management ([53f2b6d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/53f2b6de7c809b88dad0ea2e65187aedaba34b42))
+
 ### [0.1.6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.1.5...v0.1.6) (2026-04-23)
 
 ### Bug Fixes
