@@ -216,7 +216,7 @@ for (const entry of templateEntries) {
 sanitizeTemplatePackageJson();
 writePublishPackageJson();
 
-const cliSourcePath = join(rootDir, 'scripts', 'create-package-cli.mjs');
+const cliSourcePath = join(rootDir, 'packages', 'cli', 'dist', 'index.mjs');
 const cliDestinationPath = join(binDir, 'create-acme-platform.mjs');
 
 cpSync(cliSourcePath, cliDestinationPath);

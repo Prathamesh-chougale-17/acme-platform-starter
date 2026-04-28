@@ -33,7 +33,7 @@
     "release:patch": "pnpm exec standard-version --release-as patch",
     "release:minor": "pnpm exec standard-version --release-as minor",
     "release:major": "pnpm exec standard-version --release-as major",
-    "release:build-package": "node scripts/build-create-package.mjs",
+    "release:build-package": "pnpm --filter @acme/create build && node scripts/build-create-package.mjs",
     "release:verify": "pnpm release:build-package && node scripts/verify-create-package.mjs",
     "release:pack:dry-run": "pnpm release:build-package && npm pack --dry-run ./dist/create-acme-platform"
   },
