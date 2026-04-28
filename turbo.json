@@ -1,7 +1,6 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalDependencies": [".env", ".env.*"],
   "globalEnv": [
     "NEXT_RUNTIME",
     "NODE_ENV",
@@ -37,7 +36,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "$TURBO_ROOT$/.env*",
+        "$TURBO_ROOT$/apps/api/.env*",
+        "$TURBO_ROOT$/apps/web/.env*"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "coverage/**"]
     },
     "lint": {

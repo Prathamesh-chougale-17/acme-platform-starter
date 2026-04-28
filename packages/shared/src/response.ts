@@ -6,6 +6,7 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'SERVICE_UNAVAILABLE'
   | 'UNAUTHORIZED'
+  | 'UPSTREAM_UNAVAILABLE'
   | 'VALIDATION_ERROR';
 
 export type ApiMeta = {

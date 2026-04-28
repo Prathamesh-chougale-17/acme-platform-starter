@@ -10,6 +10,7 @@ const ErrorCodeSchema = z
     'NOT_FOUND',
     'SERVICE_UNAVAILABLE',
     'UNAUTHORIZED',
+    'UPSTREAM_UNAVAILABLE',
     'VALIDATION_ERROR',
   ])
   .openapi('ApiErrorCode');

@@ -15,6 +15,7 @@ describe('config', () => {
     expect(env.PORT).toBe(3001);
     expect(env.API_SERVICE_NAME).toBe('acme-api');
     expect(env.REDIS_PREFIX).toBe('acme-platform');
+    expect(env.OTEL_EXPORTER_OTLP_ENDPOINT).toBeUndefined();
   });
 
   it('rejects invalid web env values', () => {

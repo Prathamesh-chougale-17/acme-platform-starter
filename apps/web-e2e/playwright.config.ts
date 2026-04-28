@@ -21,7 +21,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
-        NODE_ENV: 'test',
+        NODE_ENV: 'development',
         PORT: '3001',
         DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/acme_platform',
         APP_ORIGIN: 'http://127.0.0.1:3000',
@@ -37,6 +37,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
+        NODE_ENV: 'development',
         DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/acme_platform',
         APP_ORIGIN: 'http://127.0.0.1:3000',
         API_CORS_ORIGIN: 'http://127.0.0.1:3000',

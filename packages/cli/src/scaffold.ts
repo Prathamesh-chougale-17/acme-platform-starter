@@ -60,6 +60,36 @@ export const removeObservability = (targetDir: string): void => {
   if (existsSync(obsDir)) {
     rmSync(obsDir, { recursive: true, force: true });
   }
+
+  for (const envExamplePath of [
+    join(targetDir, '.env.example'),
+    join(targetDir, 'apps', 'api', '.env.example'),
+  ]) {
+    if (!existsSync(envExamplePath)) {
+      continue;
+    }
+
+    const nextContent = readFileSync(envExamplePath, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => {
+        if (line.startsWith('OTEL_EXPORTER_OTLP_ENDPOINT=')) {
+          return 'OTEL_EXPORTER_OTLP_ENDPOINT=';
+        }
+
+        if (line.startsWith('LOKI_URL=')) {
+          return 'LOKI_URL=';
+        }
+
+        if (line.startsWith('API_LOG_TO_LOKI=')) {
+          return 'API_LOG_TO_LOKI=false';
+        }
+
+        return line;
+      })
+      .join('\n');
+
+    writeFileSync(envExamplePath, nextContent);
+  }
 };
 
 export const patchPackageJson = (targetDir: string): void => {

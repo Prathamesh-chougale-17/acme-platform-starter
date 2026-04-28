@@ -78,6 +78,61 @@ describe('recordOrganizationAccessEvent', () => {
     });
   });
 
+  it('does not fail the domain event when webhook delivery enqueueing fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    enqueueWebhookDeliveryJobMock.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+    try {
+      await expect(
+        recordOrganizationAccessEvent({
+          auditRepository,
+          webhookRepository,
+          featureFlags: {
+            asyncInviteEmail: true,
+            outgoingWebhooks: true,
+          },
+          event: {
+            organizationId: 'b9844d08-96bd-4af5-a122-3b6dc69a792c',
+            eventType: 'invitation.accepted',
+            auditLog: {
+              organizationId: 'b9844d08-96bd-4af5-a122-3b6dc69a792c',
+              eventType: 'invitation.accepted',
+            },
+            webhookPayload: {
+              occurredAt: new Date().toISOString(),
+              organizationId: 'b9844d08-96bd-4af5-a122-3b6dc69a792c',
+              eventType: 'invitation.accepted',
+              actor: {
+                userId: '4ad9f899-3d6d-48ed-b0e2-9609d7e3522f',
+                role: 'member',
+              },
+              target: {
+                email: 'grace@example.com',
+                invitationId: '9b7dbbb2-84b3-4df9-88cf-a60a4d9cc4d5',
+              },
+              metadata: {
+                invitedRole: 'member',
+              },
+            },
+          },
+        }),
+      ).resolves.toBeUndefined();
+
+      expect(consoleError).toHaveBeenCalledWith(
+        '[jobs] failed to enqueue webhook delivery',
+        expect.objectContaining({
+          deliveryId: '9b7dbbb2-84b3-4df9-88cf-a60a4d9cc4d5',
+        }),
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    expect(auditRepository.appendAuditLog).toHaveBeenCalledTimes(1);
+    expect(webhookRepository.createWebhookDeliveriesForEvent).toHaveBeenCalledTimes(1);
+    expect(enqueueWebhookDeliveryJobMock).toHaveBeenCalledTimes(1);
+  });
+
   it('skips webhook fan-out when the feature flag is disabled', async () => {
     await recordOrganizationAccessEvent({
       auditRepository,

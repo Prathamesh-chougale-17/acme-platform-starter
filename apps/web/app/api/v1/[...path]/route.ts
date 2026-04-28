@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { failure } from '@acme/shared';
 
 const DEFAULT_API_UPSTREAM_URL = 'http://localhost:3001';
 const HOP_BY_HOP_HEADERS = [
@@ -71,16 +72,13 @@ const forwardRequest = async (
     });
   } catch (error) {
     return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'UPSTREAM_UNAVAILABLE',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'The API upstream could not be reached from the web server.',
-        },
-      },
+      failure({
+        code: 'UPSTREAM_UNAVAILABLE',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'The API upstream could not be reached from the web server.',
+      }),
       {
         status: 502,
       },

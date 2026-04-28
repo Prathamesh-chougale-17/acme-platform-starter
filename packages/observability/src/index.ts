@@ -17,7 +17,7 @@ import {
 export type ObservabilityOptions = {
   serviceName: string;
   environment: string;
-  endpoint: string;
+  endpoint?: string | undefined;
 };
 
 let sdk: NodeSDK | undefined;
@@ -25,6 +25,10 @@ let hasStarted = false;
 
 export const startObservability = async (options: ObservabilityOptions): Promise<void> => {
   if (hasStarted) {
+    return;
+  }
+
+  if (!options.endpoint) {
     return;
   }
 

@@ -50,11 +50,20 @@ export const recordOrganizationAccessEvent = async ({
     payload: event.webhookPayload,
   });
 
-  await Promise.all(
+  const enqueueResults = await Promise.allSettled(
     deliveries.map((delivery) =>
       enqueueWebhookDeliveryJob({
         deliveryId: delivery.id,
       }),
     ),
   );
+
+  for (const [index, result] of enqueueResults.entries()) {
+    if (result.status === 'rejected') {
+      console.error('[jobs] failed to enqueue webhook delivery', {
+        deliveryId: deliveries[index]?.id,
+        error: result.reason,
+      });
+    }
+  }
 };
