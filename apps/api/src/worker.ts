@@ -26,13 +26,14 @@ const MAX_WEBHOOK_DELIVERY_ATTEMPTS = 5;
 const SENTRY_FLUSH_TIMEOUT_MS = 2_000;
 
 const env = loadApiEnv(process.env);
+const enableLoki = env.API_LOG_TO_LOKI && Boolean(env.LOKI_URL);
 const logger = createLogger({
   serviceName: `${env.API_SERVICE_NAME}-worker`,
   environment: env.NODE_ENV,
   level: env.API_LOG_LEVEL,
-  lokiUrl: env.LOKI_URL,
+  ...(env.LOKI_URL ? { lokiUrl: env.LOKI_URL } : {}),
   enablePretty: env.NODE_ENV !== 'production',
-  enableLoki: env.API_LOG_TO_LOKI,
+  enableLoki,
 });
 
 const usersRepository = createUsersRepository();

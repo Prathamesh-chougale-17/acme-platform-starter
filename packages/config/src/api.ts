@@ -29,7 +29,7 @@ export const ApiEnvSchema = z
     API_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
     API_LOG_TO_LOKI: optionalBooleanFlag.default(false),
     OTEL_EXPORTER_OTLP_ENDPOINT: optionalUrl,
-    LOKI_URL: z.url().default('http://localhost:3100'),
+    LOKI_URL: optionalUrl,
   })
   .extend(AsyncPlatformEnvSchema.shape);
 

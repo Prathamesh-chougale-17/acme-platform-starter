@@ -16,6 +16,18 @@ describe('config', () => {
     expect(env.API_SERVICE_NAME).toBe('acme-api');
     expect(env.REDIS_PREFIX).toBe('acme-platform');
     expect(env.OTEL_EXPORTER_OTLP_ENDPOINT).toBeUndefined();
+    expect(env.LOKI_URL).toBeUndefined();
+  });
+
+  it('parses optional api observability endpoints when provided', () => {
+    const env = loadApiEnv({
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/acme_platform',
+      LOKI_URL: 'http://localhost:3100',
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318',
+    });
+
+    expect(env.LOKI_URL).toBe('http://localhost:3100');
+    expect(env.OTEL_EXPORTER_OTLP_ENDPOINT).toBe('http://localhost:4318');
   });
 
   it('rejects invalid web env values', () => {

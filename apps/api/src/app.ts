@@ -56,13 +56,14 @@ export type CreateAppOptions = {
 
 export const createApp = (options: CreateAppOptions = {}) => {
   const env = options.env ?? loadApiEnv(process.env);
+  const enableLoki = env.API_LOG_TO_LOKI && Boolean(env.LOKI_URL);
   const logger = createLogger({
     serviceName: env.API_SERVICE_NAME,
     environment: env.NODE_ENV,
     level: env.API_LOG_LEVEL,
-    lokiUrl: env.LOKI_URL,
+    ...(env.LOKI_URL ? { lokiUrl: env.LOKI_URL } : {}),
     enablePretty: env.NODE_ENV !== 'production',
-    enableLoki: env.API_LOG_TO_LOKI,
+    enableLoki,
   });
 
   initSentry(env);
@@ -131,13 +132,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
     loggerInstance?.error(
       {
         err: error,
-        ...{
-          requestId: c.get('requestId'),
-          traceId: c.get('traceId'),
-          route: c.req.path,
-          method: c.req.method,
-          statusCode,
-        },
+        statusCode,
       },
       'request failed',
     );

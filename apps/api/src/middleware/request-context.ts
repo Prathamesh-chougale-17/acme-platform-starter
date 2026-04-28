@@ -70,10 +70,6 @@ export const requestContextMiddleware = ({
 
           requestLogger.info(
             getLoggerBindings({
-              requestId,
-              traceId,
-              route: c.req.path,
-              method: c.req.method,
               statusCode,
               latency,
             }),

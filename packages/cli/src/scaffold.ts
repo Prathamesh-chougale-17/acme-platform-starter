@@ -322,10 +322,6 @@ export const removeObservability = (targetDir: string): void => {
 
           requestLogger.info(
             getLoggerBindings({
-              requestId,
-              traceId,
-              route: c.req.path,
-              method: c.req.method,
               statusCode,
               latency,
             }),
@@ -364,10 +360,6 @@ export const removeObservability = (targetDir: string): void => {
 
       requestLogger.info(
         getLoggerBindings({
-          requestId,
-          traceId,
-          route: c.req.path,
-          method: c.req.method,
           statusCode,
           latency,
         }),

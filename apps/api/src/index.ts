@@ -15,19 +15,20 @@ type GracefulServer = ReturnType<typeof serve> & {
 };
 
 const env = loadApiEnv(process.env);
+const enableLoki = env.API_LOG_TO_LOKI && Boolean(env.LOKI_URL);
 const bootstrapLogger = createLogger({
   serviceName: env.API_SERVICE_NAME,
   environment: env.NODE_ENV,
   level: env.API_LOG_LEVEL,
-  lokiUrl: env.LOKI_URL,
+  ...(env.LOKI_URL ? { lokiUrl: env.LOKI_URL } : {}),
   enablePretty: env.NODE_ENV !== 'production',
-  enableLoki: env.API_LOG_TO_LOKI,
+  enableLoki,
 });
 
 bootstrapLogger.info(
   {
     port: env.PORT,
-    logToLoki: env.API_LOG_TO_LOKI,
+    logToLoki: enableLoki,
     otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
   },
   'bootstrapping api server',

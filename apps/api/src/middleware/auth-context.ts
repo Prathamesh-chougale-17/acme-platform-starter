@@ -14,6 +14,7 @@ const applyAuthContext = (
   c: Parameters<MiddlewareHandler<AppContext>>[0],
   authContext: Awaited<ReturnType<typeof resolveAuthContext>>,
 ) => {
+  const previousAuthContext = c.get('auth');
   c.set('auth', authContext);
 
   if (!authContext) {
@@ -26,7 +27,14 @@ const applyAuthContext = (
     ...(authContext.role ? { role: authContext.role } : {}),
   });
 
-  c.set('logger', c.get('logger').child(authBindings));
+  const hasSameAuthBindings =
+    previousAuthContext?.user.id === authContext.user.id &&
+    previousAuthContext.organizationId === authContext.organizationId &&
+    previousAuthContext.role === authContext.role;
+
+  if (!hasSameAuthBindings) {
+    c.set('logger', c.get('logger').child(authBindings));
+  }
 
   Sentry.getCurrentScope().setUser({
     id: authContext.user.id,

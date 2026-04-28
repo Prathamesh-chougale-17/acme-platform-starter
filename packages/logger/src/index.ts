@@ -50,6 +50,7 @@ class LokiWriteStream extends Writable {
   }> = [];
   private readonly timer?: NodeJS.Timeout;
   private flushPromise: Promise<void> | undefined;
+  private lastFailureLogAt = 0;
 
   constructor(options: {
     host: string;
@@ -161,6 +162,24 @@ class LokiWriteStream extends Writable {
     return `${Date.now()}000000`;
   }
 
+  private logFlushFailure(error: unknown): void {
+    const now = Date.now();
+    const oneMinuteMs = 60_000;
+
+    if (now - this.lastFailureLogAt < oneMinuteMs) {
+      return;
+    }
+
+    this.lastFailureLogAt = now;
+
+    console.warn(
+      '[logger] failed to push logs to Loki; check LOKI_URL or disable API_LOG_TO_LOKI',
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
+  }
+
   async flush(): Promise<void> {
     if (this.flushPromise) {
       return this.flushPromise;
@@ -207,7 +226,7 @@ class LokiWriteStream extends Writable {
         }
       })
       .catch((error) => {
-        console.error('Failed to push logs to Loki', error);
+        this.logFlushFailure(error);
       })
       .finally(() => {
         this.flushPromise = undefined;

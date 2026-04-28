@@ -35,7 +35,7 @@ export class ApiClientError extends Error {
   }
 }
 
-const REQUEST_TIMEOUT_MS = 8_000;
+const REQUEST_TIMEOUT_MS = 20_000;
 const INVITATION_REQUEST_TIMEOUT_MS = 45_000;
 
 const parseApiResponse = async (response: Response): Promise<ApiResponse<unknown> | undefined> => {
