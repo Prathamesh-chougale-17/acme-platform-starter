@@ -34,9 +34,9 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
     message: 'Which package manager do you use?',
     options: [
       { value: 'pnpm', label: 'pnpm', hint: 'recommended' },
-      { value: 'npm', label: 'npm' },
-      { value: 'yarn', label: 'yarn' },
-      { value: 'bun', label: 'bun' },
+      { value: 'npm', label: 'npm', hint: 'coming soon', disabled: true },
+      { value: 'yarn', label: 'yarn', hint: 'coming soon', disabled: true },
+      { value: 'bun', label: 'bun', hint: 'coming soon', disabled: true },
     ],
   });
   if (isCancel(pmAnswer)) {
@@ -59,6 +59,7 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
       },
     ],
     initialValues: ['observability', 'redis'],
+    required: false,
   });
   if (isCancel(featureAnswer)) {
     cancel('Operation cancelled.');
