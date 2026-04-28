@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.3...v0.3.4) (2026-04-28)
+
+### Features
+
+- enhance logging configuration and error handling for Loki integration ([cc00d13](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/cc00d13f1e92e8f4b0e5de594b82b2834b58cccd))
+
 ### [0.3.3](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.2...v0.3.3) (2026-04-28)
 
 ### Features
