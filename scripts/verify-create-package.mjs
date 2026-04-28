@@ -85,6 +85,7 @@ for (const excludedPath of [
   join(templateDir, '.vscode'),
   join(templateDir, 'coverage'),
   join(templateDir, 'dist'),
+  join(templateDir, 'packages', 'cli'),
   join(templateDir, 'node_modules'),
   join(templateDir, 'test-results'),
   join(templateDir, 'apps', 'api', '.env'),

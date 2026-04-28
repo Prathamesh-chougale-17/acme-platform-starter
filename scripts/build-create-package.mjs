@@ -50,6 +50,7 @@ const excludedDirectoryNames = new Set([
   '.turbo',
   '.vscode',
   'build',
+  'cli',
   'coverage',
   'dist',
   'node_modules',
