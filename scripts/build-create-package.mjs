@@ -130,6 +130,10 @@ const shouldCopy = (sourcePath) => {
     return false;
   }
 
+  if (basename.endsWith('.tsbuildinfo')) {
+    return false;
+  }
+
   return true;
 };
 

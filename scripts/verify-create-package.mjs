@@ -92,6 +92,7 @@ for (const excludedPath of [
   join(templateDir, 'apps', 'api', 'dist'),
   join(templateDir, 'apps', 'web', '.env'),
   join(templateDir, 'apps', 'web', '.next'),
+  join(templateDir, 'apps', 'web', 'tsconfig.tsbuildinfo'),
 ]) {
   assert.ok(!existsSync(excludedPath), `Did not expect ${excludedPath} in the packaged output`);
 }

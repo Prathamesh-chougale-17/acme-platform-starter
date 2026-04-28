@@ -50,12 +50,12 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
       {
         value: 'observability',
         label: 'Observability stack',
-        hint: 'Grafana, Loki, Tempo, Prometheus — infra/observability/ removed if deselected',
+        hint: 'Grafana, Loki, Tempo, Prometheus, OTel package — removed if deselected',
       },
       {
         value: 'redis',
         label: 'Async jobs / Redis (BullMQ)',
-        hint: 'Auto-disabled at runtime when REDIS_URL is absent; code stays in place',
+        hint: '@acme/jobs, API worker, Redis service, and async CI — removed if deselected',
       },
     ],
     initialValues: ['observability', 'redis'],

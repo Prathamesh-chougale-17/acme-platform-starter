@@ -2,7 +2,7 @@ import { basename, resolve } from 'node:path';
 
 import { parseFlags, USAGE } from './flags.js';
 import { runWizard } from './prompts.js';
-import { copyTemplate, removeObservability, patchPackageJson } from './scaffold.js';
+import { copyTemplate, removeJobs, removeObservability, patchPackageJson } from './scaffold.js';
 
 const main = async (): Promise<void> => {
   const { force, skipPrompts, help, targetArg } = parseFlags(process.argv);
@@ -39,6 +39,10 @@ const main = async (): Promise<void> => {
     removeObservability(targetDir);
   }
 
+  if (!includeRedis) {
+    removeJobs(targetDir);
+  }
+
   patchPackageJson(targetDir);
 
   const pm = packageManager;
@@ -60,15 +64,18 @@ const main = async (): Promise<void> => {
       'Without it, asyncInviteEmail and outgoingWebhooks feature flags auto-disable at runtime.',
     );
   } else {
-    console.log('\nNote: Async jobs / Redis was not selected. The code remains in place but is');
-    console.log(
-      'automatically disabled when REDIS_URL is absent — no changes to the source needed.',
-    );
+    console.log('\nNote: Async jobs / Redis was not selected. The @acme/jobs package, worker');
+    console.log('entrypoint, Redis service, and async CI job were removed from this project.');
   }
 
   if (!includeObservability) {
-    console.log('\nNote: infra/observability/ was removed. The @acme/observability package stays');
-    console.log('in your codebase and becomes a no-op when OTEL_EXPORTER_OTLP_ENDPOINT is unset.');
+    console.log('\nNote: Observability stack was not selected. The Grafana/Loki/Tempo/Prometheus');
+    console.log('Docker services and @acme/observability package were removed from this project.');
+  }
+
+  if (!includeRedis || !includeObservability) {
+    console.log('\nNote: pnpm-lock.yaml was removed so your first install can regenerate a');
+    console.log('lockfile that matches the selected feature set.');
   }
 };
 
