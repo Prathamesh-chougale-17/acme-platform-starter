@@ -6,6 +6,8 @@ Production-grade SaaS monorepo starter. Scaffold it in one command and get a ful
 npm create acme-platform@latest my-app
 # or
 pnpm create acme-platform my-app
+# opt into project agent skills
+npx create-acme-platform my-app --with-skills
 ```
 
 ## What You Get
@@ -118,6 +120,8 @@ packages/
 
 infra/
   observability/ Grafana, Loki, Tempo, Prometheus, OTel Collector config
+
+skills-lock.json Optional agent skills manifest for scaffolded repos
 
 scripts/
   build-create-package.mjs   Builds dist/create-acme-platform for npm publish

@@ -4,7 +4,13 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { FALLBACK_PACKAGE_NAME, removeJobs, removeObservability, toSlug } from './scaffold.js';
+import {
+  FALLBACK_PACKAGE_NAME,
+  removeJobs,
+  removeObservability,
+  removeSkillsLock,
+  toSlug,
+} from './scaffold.js';
 
 const writeProjectFile = (targetDir: string, relativePath: string, content: string): void => {
   const filePath = join(targetDir, ...relativePath.split('/'));
@@ -365,6 +371,23 @@ describe('toSlug', () => {
       expect(
         readFileSync(join(targetDir, 'apps', 'api', 'src', 'services', 'user-service.ts'), 'utf8'),
       ).toContain('AppendAuditLogInput');
+    } finally {
+      rmSync(targetDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('skills scaffolding', () => {
+  it('removes skills-lock.json when agent skills are not selected', () => {
+    const targetDir = join(tmpdir(), `acme-scaffold-${crypto.randomUUID()}`);
+
+    mkdirSync(targetDir, { recursive: true });
+    writeFileSync(join(targetDir, 'skills-lock.json'), '{"version":1,"skills":{}}\n');
+
+    try {
+      removeSkillsLock(targetDir);
+
+      expect(existsSync(join(targetDir, 'skills-lock.json'))).toBe(false);
     } finally {
       rmSync(targetDir, { recursive: true, force: true });
     }

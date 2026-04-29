@@ -7,6 +7,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -66,6 +67,18 @@ type TurboJson = {
   globalEnv?: string[];
   tasks?: Record<string, unknown>;
   [key: string]: unknown;
+};
+
+type SkillsLock = {
+  version?: number;
+  skills?: Record<
+    string,
+    {
+      source?: string;
+      sourceType?: string;
+      skillPath?: string;
+    }
+  >;
 };
 
 const editFile = (filePath: string, updater: (content: string) => string): void => {
@@ -185,6 +198,47 @@ const removeCopiedLockfile = (targetDir: string): void => {
   const lockfilePath = join(targetDir, 'pnpm-lock.yaml');
   if (existsSync(lockfilePath)) {
     rmSync(lockfilePath, { force: true });
+  }
+};
+
+export const removeSkillsLock = (targetDir: string): void => {
+  const skillsLockPath = join(targetDir, 'skills-lock.json');
+
+  if (existsSync(skillsLockPath)) {
+    rmSync(skillsLockPath, { force: true });
+  }
+};
+
+export const installSkillsFromLock = async (targetDir: string): Promise<void> => {
+  const skillsLockPath = join(targetDir, 'skills-lock.json');
+
+  if (!existsSync(skillsLockPath)) {
+    throw new Error('skills-lock.json was not found in the scaffold template.');
+  }
+
+  const skillsLock = readJsonFile<SkillsLock>(skillsLockPath);
+  const skillCount = Object.keys(skillsLock.skills ?? {}).length;
+
+  if (skillCount === 0) {
+    return;
+  }
+
+  console.log(`\nInstalling ${skillCount} agent skills from skills-lock.json...`);
+
+  const result = spawnSync('npx', ['-y', 'skills@latest', 'experimental_install', '--yes'], {
+    cwd: targetDir,
+    env: {
+      ...process.env,
+      DISABLE_TELEMETRY: '1',
+    },
+    shell: process.platform === 'win32',
+    stdio: 'inherit',
+  });
+
+  if ((result.status ?? 1) !== 0) {
+    throw new Error(
+      'Failed to install agent skills from skills-lock.json. Re-run "npx -y skills@latest experimental_install --yes" from the project directory after checking the error above.',
+    );
   }
 };
 

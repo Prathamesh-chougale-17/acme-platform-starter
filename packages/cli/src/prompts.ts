@@ -3,6 +3,7 @@ export interface WizardResult {
   packageManager: string;
   includeObservability: boolean;
   includeRedis: boolean;
+  includeSkills: boolean;
 }
 
 export const runWizard = async (initialTarget: string | undefined): Promise<WizardResult> => {
@@ -57,6 +58,11 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
         label: 'Async jobs / Redis (BullMQ)',
         hint: '@acme/jobs, API worker, Redis service, and async CI — removed if deselected',
       },
+      {
+        value: 'skills',
+        label: 'Agent skills',
+        hint: 'copies skills-lock.json and restores skills with npx skills@latest',
+      },
     ],
     initialValues: ['observability', 'redis'],
     required: false,
@@ -73,5 +79,6 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
     packageManager: pmAnswer as string,
     includeObservability: (featureAnswer as string[]).includes('observability'),
     includeRedis: (featureAnswer as string[]).includes('redis'),
+    includeSkills: (featureAnswer as string[]).includes('skills'),
   };
 };

@@ -72,6 +72,7 @@ for (const requiredPath of [
   join(templateDir, '.github', 'workflows', 'ci.yml'),
   join(templateDir, '.github', 'workflows', 'database-migrate.yml'),
   join(templateDir, 'scripts', 'prepare.mjs'),
+  join(templateDir, 'skills-lock.json'),
 ]) {
   assert.ok(existsSync(requiredPath), `Expected ${requiredPath} to exist in the packaged output`);
 }
@@ -135,6 +136,10 @@ runCommand(nodeCommand, [cliPath, directTarget, '--yes']);
 const directPackageJson = JSON.parse(readFileSync(join(directTarget, 'package.json'), 'utf8'));
 assert.equal(directPackageJson.name, 'from-bin');
 assert.equal(directPackageJson.private, true);
+assert.ok(
+  !existsSync(join(directTarget, 'skills-lock.json')),
+  'Default scaffolds should not include skills-lock.json',
+);
 
 const secondRunResult = runCommand(nodeCommand, [cliPath, directTarget, '--yes'], {
   captureOutput: true,
@@ -188,6 +193,10 @@ runCommand(nodeCommand, [installedCliPath, tarballTarget, '--yes'], {
 const tarballPackageJson = JSON.parse(readFileSync(join(tarballTarget, 'package.json'), 'utf8'));
 assert.equal(tarballPackageJson.name, 'from-tarball');
 assert.equal(tarballPackageJson.private, true);
+assert.ok(
+  !existsSync(join(tarballTarget, 'skills-lock.json')),
+  'Default scaffolds from the packed tarball should not include skills-lock.json',
+);
 
 copyEnvExampleIfPresent(tarballTarget);
 copyEnvExampleIfPresent(join(tarballTarget, 'apps', 'api'));

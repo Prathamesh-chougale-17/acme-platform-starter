@@ -4,17 +4,20 @@
     "better-auth-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
       "computedHash": "9ab075b5061be2a5f299c10505667345cc1ec76e8de4120901cfd586643e776f"
     },
     "better-auth-security-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",
+      "skillPath": "security/SKILL.md",
       "computedHash": "ed38caef4b297cc399d717258d6ea4e6ecb8894c453c83450064c7e7c6e5cc02"
     },
     "drizzle-orm": {
-      "source": "bobmatnyc/claude-mpm-skills",
+      "source": "mindrally/skills",
       "sourceType": "github",
-      "computedHash": "c5132317134698624d023cbbbb612b99d2b20f532f6d1417639607cf401f03cd"
+      "skillPath": "drizzle-orm/SKILL.md",
+      "computedHash": "9d5a53ffff9a69b164d9729347a0c4a90c76248a8f25da3a6c7df47a69ac6f0f"
     },
     "hono": {
       "source": "yusukebe/hono-skill",
