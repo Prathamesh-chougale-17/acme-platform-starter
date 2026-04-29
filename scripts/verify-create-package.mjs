@@ -71,6 +71,7 @@ for (const requiredPath of [
   join(templateDir, 'packages'),
   join(templateDir, '.github', 'workflows', 'ci.yml'),
   join(templateDir, '.github', 'workflows', 'database-migrate.yml'),
+  join(templateDir, '.gitignore.template'),
   join(templateDir, 'scripts', 'prepare.mjs'),
   join(templateDir, 'skills-lock.json'),
 ]) {
@@ -137,6 +138,14 @@ const directPackageJson = JSON.parse(readFileSync(join(directTarget, 'package.js
 assert.equal(directPackageJson.name, 'from-bin');
 assert.equal(directPackageJson.private, true);
 assert.ok(
+  existsSync(join(directTarget, '.gitignore')),
+  'Default scaffolds should include .gitignore',
+);
+assert.ok(
+  !existsSync(join(directTarget, '.gitignore.template')),
+  'Default scaffolds should not leave .gitignore.template behind',
+);
+assert.ok(
   existsSync(join(directTarget, 'skills-lock.json')),
   'Default scaffolds should include skills-lock.json',
 );
@@ -193,6 +202,14 @@ runCommand(nodeCommand, [installedCliPath, tarballTarget, '--yes'], {
 const tarballPackageJson = JSON.parse(readFileSync(join(tarballTarget, 'package.json'), 'utf8'));
 assert.equal(tarballPackageJson.name, 'from-tarball');
 assert.equal(tarballPackageJson.private, true);
+assert.ok(
+  existsSync(join(tarballTarget, '.gitignore')),
+  'Default scaffolds from the packed tarball should include .gitignore',
+);
+assert.ok(
+  !existsSync(join(tarballTarget, '.gitignore.template')),
+  'Default scaffolds from the packed tarball should not leave .gitignore.template behind',
+);
 assert.ok(
   existsSync(join(tarballTarget, 'skills-lock.json')),
   'Default scaffolds from the packed tarball should include skills-lock.json',

@@ -20,7 +20,6 @@ const binDir = join(publishDir, 'bin');
 const templateEntries = [
   '.dockerignore',
   '.env.example',
-  '.gitignore',
   '.husky',
   '.github/actions',
   '.github/workflows/ci.yml',
@@ -220,6 +219,12 @@ mkdirSync(binDir, {
 for (const entry of templateEntries) {
   copyIntoTemplate(entry);
 }
+
+writeFileSync(join(templateDir, '.gitignore.template'), readFileSync(join(rootDir, '.gitignore')));
+writeFileSync(
+  join(publishDir, '.npmignore'),
+  '# Package contents are controlled by package.json files.\n',
+);
 
 sanitizeTemplatePackageJson();
 writePublishPackageJson();

@@ -55,6 +55,22 @@ export const copyTemplate = (targetDir: string, force: boolean): void => {
   }
 
   cpSync(templateDir, targetDir, { recursive: true });
+  restoreGitignore(targetDir);
+};
+
+const restoreGitignore = (targetDir: string): void => {
+  const gitignoreTemplatePath = join(targetDir, '.gitignore.template');
+  const gitignorePath = join(targetDir, '.gitignore');
+
+  if (!existsSync(gitignoreTemplatePath)) {
+    return;
+  }
+
+  if (!existsSync(gitignorePath)) {
+    copyFileSync(gitignoreTemplatePath, gitignorePath);
+  }
+
+  rmSync(gitignoreTemplatePath, { force: true });
 };
 
 type PackageJson = {
