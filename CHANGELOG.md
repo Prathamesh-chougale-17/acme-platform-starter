@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v1.0.0...v1.0.1) (2026-04-29)
+
+### Features
+
+- **cli:** enable agent skills by default ([0291e5d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/0291e5dd9eecd66697435ff1a46190346d5a9d4c))
+
 ## [1.0.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.4.1...v1.0.0) (2026-04-29)
 
 ### Bug Fixes
