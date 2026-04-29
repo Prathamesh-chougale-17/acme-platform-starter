@@ -18,12 +18,14 @@ let notes = `Release ${tagName}\n\nSee CHANGELOG.md for the full release history
 if (existsSync(changelogPath)) {
   const changelog = readFileSync(changelogPath, 'utf8');
   const headings = Array.from(
-    changelog.matchAll(/^##\s+(?:\[(?<linked>[^\]]+)\]|(?<plain>[^\s]+)).*$/gm),
+    changelog.matchAll(
+      /^#{2,3}\s+(?:\[(?<linked>v?\d+\.\d+\.\d+(?:[-+][^\]]+)?)\]|(?<plain>v?\d+\.\d+\.\d+(?:[-+][^\s]+)?)).*$/gm,
+    ),
   );
 
   for (let index = 0; index < headings.length; index += 1) {
     const match = headings[index];
-    const matchedVersion = match?.groups?.linked ?? match?.groups?.plain;
+    const matchedVersion = (match?.groups?.linked ?? match?.groups?.plain)?.replace(/^v/, '');
 
     if (matchedVersion !== version) {
       continue;
