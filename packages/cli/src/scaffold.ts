@@ -1,4 +1,5 @@
 import {
+  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -198,6 +199,20 @@ const removeCopiedLockfile = (targetDir: string): void => {
   const lockfilePath = join(targetDir, 'pnpm-lock.yaml');
   if (existsSync(lockfilePath)) {
     rmSync(lockfilePath, { force: true });
+  }
+};
+
+export const copyEnvFiles = (targetDir: string): void => {
+  const pairs: [string, string][] = [
+    [join(targetDir, '.env.example'), join(targetDir, '.env')],
+    [join(targetDir, 'apps', 'api', '.env.example'), join(targetDir, 'apps', 'api', '.env')],
+    [join(targetDir, 'apps', 'web', '.env.example'), join(targetDir, 'apps', 'web', '.env')],
+  ];
+
+  for (const [src, dest] of pairs) {
+    if (existsSync(src) && !existsSync(dest)) {
+      copyFileSync(src, dest);
+    }
   }
 };
 

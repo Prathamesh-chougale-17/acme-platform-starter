@@ -3,6 +3,7 @@ import { basename, resolve } from 'node:path';
 import { parseFlags, USAGE } from './flags.js';
 import { runWizard } from './prompts.js';
 import {
+  copyEnvFiles,
   copyTemplate,
   installSkillsFromLock,
   patchPackageJson,
@@ -64,6 +65,7 @@ const main = async (): Promise<void> => {
   }
 
   patchPackageJson(targetDir);
+  copyEnvFiles(targetDir);
 
   if (includeSkills) {
     await installSkillsFromLock(targetDir);
@@ -79,9 +81,7 @@ const main = async (): Promise<void> => {
   console.log('Next steps:');
   console.log(`  1. cd ${basename(targetDir)}`);
   console.log(`  2. ${installCmd}`);
-  console.log(
-    '  3. Copy `.env.example`, `apps/api/.env.example`, and `apps/web/.env.example` to their `.env` files',
-  );
+  console.log('  3. Fill in the values in `.env`, `apps/api/.env`, and `apps/web/.env`');
   console.log(`  4. ${devCmd}`);
 
   if (includeRedis) {
