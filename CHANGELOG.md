@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.5...v0.3.6) (2026-04-29)
+
+### Bug Fixes
+
+- **web-e2e:** update smoke tests for home page and API docs visibility ([f8c6b3e](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/f8c6b3efd8bf50d43276b4edad1a86d2ec14fdc7))
+
 ### [0.3.5](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.4...v0.3.5) (2026-04-29)
 
 ### Bug Fixes
