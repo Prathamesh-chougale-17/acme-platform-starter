@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.5](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.4...v0.3.5) (2026-04-29)
+
+### Bug Fixes
+
+- **ui:** refine shared theme styling ([328d400](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/328d400ab9d66f43f5b91551d2f67e77b6fb3947))
+- **web:** apply theme provider consistently ([f484a33](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/f484a3363ce329b64a158f5b87a75d05e664d471))
+
 ### [0.3.4](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.3...v0.3.4) (2026-04-28)
 
 ### Features
