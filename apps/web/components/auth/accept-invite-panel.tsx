@@ -32,15 +32,21 @@ export function AcceptInvitePanel({
     viewer!.user.email.trim().toLowerCase() !== invitation!.email.trim().toLowerCase();
 
   if (!invitationId) {
-    return <p className="text-sm text-rose-300">Invitation id missing from the URL.</p>;
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">Invitation id missing from the URL.</p>
+    );
   }
 
   if (invitationPreviewQuery.isPending) {
-    return <p className="text-sm text-slate-300">Loading invitation details...</p>;
+    return (
+      <p className="text-sm text-slate-600 dark:text-slate-300">Loading invitation details...</p>
+    );
   }
 
   if (invitationPreviewQuery.isError || !invitation) {
-    return <p className="text-sm text-rose-300">Unable to load invitation details.</p>;
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">Unable to load invitation details.</p>
+    );
   }
 
   if (!isAuthenticated) {
@@ -48,12 +54,14 @@ export function AcceptInvitePanel({
 
     return (
       <div className="space-y-4">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-          <p className="font-semibold text-white">{invitation.organizationName}</p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+          <p className="font-semibold text-slate-950 dark:text-slate-50">
+            {invitation.organizationName}
+          </p>
           <p className="mt-2">Invitee: {invitation.email}</p>
           <p className="mt-1">Role: {invitation.role}</p>
         </div>
-        <p className="text-sm leading-6 text-slate-300">
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
           Sign in or create an account with the invited email address before accepting this invite.
         </p>
         <div className="flex flex-wrap gap-3">
@@ -75,12 +83,14 @@ export function AcceptInvitePanel({
   if (isWrongAccount) {
     return (
       <div className="space-y-4">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-          <p className="font-semibold text-white">{invitation.organizationName}</p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+          <p className="font-semibold text-slate-950 dark:text-slate-50">
+            {invitation.organizationName}
+          </p>
           <p className="mt-2">Invitee: {invitation.email}</p>
           <p className="mt-1">Signed in as: {viewer?.user.email}</p>
         </div>
-        <p className="text-sm text-rose-300">
+        <p className="text-sm text-red-600 dark:text-red-400">
           This invitation is for {invitation.email}. Switch accounts to continue.
         </p>
         <SignOutButton variant="secondary" />
@@ -90,13 +100,15 @@ export function AcceptInvitePanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-        <p className="font-semibold text-white">{invitation.organizationName}</p>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+        <p className="font-semibold text-slate-950 dark:text-slate-50">
+          {invitation.organizationName}
+        </p>
         <p className="mt-2">Invitee: {invitation.email}</p>
         <p className="mt-1">Role: {invitation.role}</p>
         <p className="mt-1">Status: {invitation.status}</p>
       </div>
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button
         disabled={isPending}
         onClick={() => {

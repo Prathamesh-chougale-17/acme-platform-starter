@@ -10,8 +10,6 @@ import { HeaderMenu, type HeaderNavItem } from '@/components/header-menu';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { getCurrentUser } from '@/lib/auth';
 
-import './globals.css';
-
 const displayFont = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
@@ -35,6 +33,18 @@ const navItems: HeaderNavItem[] = [
   { href: '/api/v1/docs', label: 'API Docs', kind: 'link' },
 ];
 
+const themeInitScript = `
+(function () {
+  try {
+    var theme = window.localStorage.getItem('theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var isDark = theme === 'dark' || (!theme && prefersDark);
+    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+  } catch (_) {}
+})();
+`;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -46,25 +56,29 @@ export default async function RootLayout({
   );
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
+    <html lang="en" className="bg-background" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body
+        className={`${displayFont.variable} ${monoFont.variable} min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,248,250,0.94)_28rem),#f7f8fa] text-slate-900 antialiased dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96)_28rem),#020617] dark:text-slate-100`}
+      >
         <QueryProvider>
-          <div className="app-shell">
-            <div className="ambient ambient-one" />
-            <div className="ambient ambient-two" />
-            <div className="ambient ambient-three" />
-            <header className="shell-header border-b border-white/10">
-              <div className="shell-header__inner">
-                <Link href="/" className="flex items-center gap-3 text-sm font-semibold text-white">
-                  <span className="flex size-11 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950 shadow-[0_12px_40px_rgba(34,211,238,0.35)]">
+          <div className="relative isolate min-h-screen before:pointer-events-none before:fixed before:inset-0 before:-z-10 before:bg-[linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] before:bg-[size:48px_48px] before:[mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.45),transparent_38rem)] dark:before:bg-[linear-gradient(rgba(148,163,184,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.07)_1px,transparent_1px)] dark:before:[mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.38),transparent_38rem)]">
+            <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-lg dark:border-slate-800/90 dark:bg-slate-950/86">
+              <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+                <Link href="/" className="flex min-w-fit items-center gap-3 text-sm font-semibold">
+                  <span className="grid size-9 place-items-center rounded-lg border border-slate-200 bg-slate-900 text-xs font-bold text-white dark:border-slate-700 dark:bg-slate-100 dark:text-slate-950">
                     AC
                   </span>
-                  <span className="text-base tracking-[0.16em] text-slate-100">{APP_NAME}</span>
+                  <span className="text-base text-slate-950 dark:text-slate-50">{APP_NAME}</span>
                 </Link>
                 <HeaderMenu currentUser={currentUser} navItems={visibleNavItems} />
               </div>
             </header>
-            <main className="shell-main">{children}</main>
+            <main className="mx-auto w-full max-w-[1480px] px-4 py-6 sm:px-6 lg:px-8">
+              {children}
+            </main>
           </div>
         </QueryProvider>
       </body>

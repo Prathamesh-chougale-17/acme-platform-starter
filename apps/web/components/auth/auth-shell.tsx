@@ -1,7 +1,11 @@
 import Link from 'next/link';
 
 import { APP_NAME } from '@acme/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@acme/ui';
+
+const panelClassName =
+  'rounded-xl border border-slate-200 bg-white/85 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-none';
+const panelHeaderClassName =
+  'flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-slate-800';
 
 export function AuthShell({
   eyebrow,
@@ -19,36 +23,56 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(20rem,0.95fr)_minmax(0,1.2fr)]">
-      <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
-        <CardHeader className="gap-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-primary">{eyebrow}</p>
-          <CardTitle className="text-4xl tracking-tight text-white md:text-5xl">{title}</CardTitle>
-          <CardDescription className="max-w-xl text-base leading-8 text-muted-foreground">
+    <div className="mx-auto grid max-w-6xl gap-8 py-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,0.7fr)] lg:items-start">
+      <section className="space-y-8 pt-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            {eyebrow}
+          </p>
+          <h1 className="mt-1 max-w-3xl text-4xl font-semibold leading-none text-slate-950 dark:text-slate-50 md:text-6xl">
+            {title}
+          </h1>
+          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
             {description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/35 p-6 text-sm text-muted-foreground">
-            <p className="font-semibold text-white">{APP_NAME}</p>
-            <p className="mt-2">
-              Database-backed sessions, organization RBAC, typed contracts, and the same auth system
-              shared between Next.js and Hono.
-            </p>
+          </p>
+        </div>
+
+        <div className={`${panelClassName} max-w-2xl`}>
+          <div className={panelHeaderClassName}>
+            <div>
+              <p className="text-base font-semibold text-slate-950 dark:text-slate-50">
+                {APP_NAME}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Auth, organizations, and API access in one flow.
+              </p>
+            </div>
           </div>
-          {alternateHref && alternateLabel ? (
-            <>
-              <Separator />
-              <Link href={alternateHref as never} className="text-sm font-semibold text-primary">
-                {alternateLabel}
-              </Link>
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
-      <Card className="shell-surface rounded-[1.75rem] border-white/10 bg-white/[0.04]">
-        <CardContent className="flex min-h-full flex-col gap-5 p-6 md:p-8">{children}</CardContent>
-      </Card>
+          <div className="grid gap-0 sm:grid-cols-3">
+            {['Sessions', 'RBAC', 'Contracts'].map((item) => (
+              <div
+                key={item}
+                className="border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 last:border-b-0 dark:border-slate-800 dark:text-slate-300 sm:border-b-0 sm:border-r sm:last:border-r-0"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {alternateHref && alternateLabel ? (
+          <Link
+            href={alternateHref as never}
+            className="text-sm font-semibold text-teal-700 dark:text-teal-300"
+          >
+            {alternateLabel}
+          </Link>
+        ) : null}
+      </section>
+
+      <section className={panelClassName}>
+        <div className="p-4">{children}</div>
+      </section>
     </div>
   );
 }

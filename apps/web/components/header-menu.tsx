@@ -10,24 +10,48 @@ import { Badge, Button, Separator, cn } from '@acme/ui';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
 import { SignOutButton } from '@/components/sign-out-button';
 
-type IconProps = {
-  className?: string;
-  'data-icon'?: 'inline-start' | 'inline-end';
-  'aria-hidden'?: boolean;
-};
-
-type IconComponent = (props: IconProps) => React.JSX.Element;
-
 export type HeaderNavItem =
   | { href: Route; label: string; requiresPrivilege?: boolean; kind?: 'page' }
   | { href: `/${string}`; label: string; requiresPrivilege?: boolean; kind: 'link' };
 
-const routeIcons: Record<string, IconComponent> = {
-  '/': GridIcon,
-  '/health': PulseIcon,
-  '/users': TeamIcon,
-  '/api/v1/docs': DocsIcon,
+const isNavItemActive = (pathname: string | null, item: HeaderNavItem) => {
+  if (!pathname || item.kind === 'link') {
+    return false;
+  }
+
+  return item.href === '/'
+    ? pathname === '/'
+    : pathname === item.href || pathname.startsWith(`${item.href}/`);
 };
+
+function NavItem({
+  item,
+  active,
+  onClick,
+}: {
+  item: HeaderNavItem;
+  active: boolean;
+  onClick?: () => void;
+}) {
+  const className = cn(
+    'inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-50',
+    active && 'bg-teal-50 text-teal-700 dark:bg-teal-950/45 dark:text-teal-200',
+  );
+
+  if (item.kind === 'link') {
+    return (
+      <a href={item.href} className={className} {...(onClick ? { onClick } : {})}>
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={item.href} className={className} {...(onClick ? { onClick } : {})}>
+      {item.label}
+    </Link>
+  );
+}
 
 export function HeaderMenu({
   currentUser,
@@ -42,40 +66,13 @@ export function HeaderMenu({
   const [isOpen, setIsOpen] = useState(false);
 
   const workspaceLabel = useMemo(() => {
-    if (!currentUser) {
-      return 'Explore platform';
-    }
-
-    if (currentUser.organization) {
-      return currentUser.organization.name;
-    }
-
-    if (currentUser.organizations.length > 0) {
-      return 'Choose workspace';
-    }
-
-    return 'Finish onboarding';
+    if (!currentUser) return 'Account';
+    if (currentUser.organization) return currentUser.organization.name;
+    if (currentUser.organizations.length > 0) return 'Select workspace';
+    return 'Set up workspace';
   }, [currentUser]);
 
-  const workspaceHint = useMemo(() => {
-    if (!currentUser) {
-      return 'Navigation';
-    }
-
-    if (currentUser.organization && currentUser.role) {
-      return `${currentUser.role} access`;
-    }
-
-    if (currentUser.organization) {
-      return 'Active workspace';
-    }
-
-    if (currentUser.organizations.length > 0) {
-      return 'Select your workspace';
-    }
-
-    return 'Workspace setup';
-  }, [currentUser]);
+  const userInitial = currentUser?.user.email.slice(0, 1).toUpperCase() ?? 'A';
 
   useEffect(() => {
     setIsOpen(false);
@@ -108,185 +105,121 @@ export function HeaderMenu({
   }, [isOpen]);
 
   return (
-    <div ref={menuRef} className="relative flex w-full justify-end sm:w-auto">
-      <Button
-        variant="secondary"
-        size="lg"
-        aria-controls={menuId}
-        aria-expanded={isOpen}
-        aria-haspopup="dialog"
-        className="w-full min-w-0 justify-between rounded-full border border-white/10 bg-white/6 px-4 text-left text-slate-100 shadow-[0_18px_50px_rgba(2,6,23,0.24)] hover:bg-white/12 sm:w-auto sm:min-w-[17rem]"
-        onClick={() => {
-          setIsOpen((open) => !open);
-        }}
-      >
-        <MenuIcon data-icon="inline-start" />
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-semibold">{workspaceLabel}</span>
-          <span className="truncate text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            {workspaceHint}
-          </span>
-        </span>
-        <ChevronIcon
-          data-icon="inline-end"
-          className={cn('transition-transform duration-200', isOpen && 'rotate-180')}
-        />
-      </Button>
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+      <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+        {navItems.map((item) => (
+          <NavItem key={item.href} item={item} active={isNavItemActive(pathname, item)} />
+        ))}
+      </nav>
 
-      {isOpen ? (
-        <div
-          id={menuId}
-          role="dialog"
-          aria-label="Header menu"
-          className="header-menu-panel absolute right-0 top-[calc(100%+0.8rem)] z-30 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/94 shadow-[0_32px_90px_rgba(2,6,23,0.5)] backdrop-blur-2xl"
+      <div ref={menuRef} className="relative">
+        <Button
+          variant="secondary"
+          aria-controls={menuId}
+          aria-expanded={isOpen}
+          aria-haspopup="dialog"
+          className="h-10 gap-3 rounded-lg border border-slate-200 bg-white px-3 text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:shadow-none dark:hover:bg-slate-900"
+          onClick={() => {
+            setIsOpen((open) => !open);
+          }}
         >
-          <div className="flex flex-col gap-5 p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/14 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  {currentUser ? (
-                    currentUser.user.email.slice(0, 1).toUpperCase()
-                  ) : (
-                    <SparkleIcon className="size-4" />
-                  )}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <p className="truncate text-sm font-semibold text-white">
-                    {currentUser ? currentUser.user.email : 'Everything in one menu'}
+          <span className="grid size-6 place-items-center rounded-md bg-slate-900 text-xs font-semibold text-white dark:bg-slate-100 dark:text-slate-950">
+            {userInitial}
+          </span>
+          <span className="hidden max-w-44 truncate sm:block">{workspaceLabel}</span>
+          <span
+            className={cn(
+              'text-slate-400 transition-transform dark:text-slate-500',
+              isOpen && 'rotate-180',
+            )}
+          >
+            ▾
+          </span>
+        </Button>
+
+        {isOpen ? (
+          <div
+            id={menuId}
+            role="dialog"
+            aria-label="Header menu"
+            className="absolute right-0 top-[calc(100%+0.6rem)] z-30 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white/98 shadow-[0_24px_70px_rgba(15,23,42,0.14),0_1px_2px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950/98 dark:shadow-[0_24px_70px_rgba(0,0,0,0.36)]"
+          >
+            <div className="flex flex-col gap-4 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">
+                    {currentUser ? currentUser.user.email : 'Not signed in'}
                   </p>
-                  <p className="text-sm leading-6 text-slate-400">
+                  <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
                     {currentUser?.organization
-                      ? `Currently working inside ${currentUser.organization.name}.`
-                      : currentUser && currentUser.organizations.length > 0
-                        ? 'You have access to workspaces, but none is active yet.'
-                        : currentUser
-                          ? 'Create or join a workspace from onboarding.'
-                          : 'Jump between the main sections without filling the header with links.'}
+                      ? currentUser.organization.name
+                      : currentUser
+                        ? 'Choose or create a workspace to continue.'
+                        : 'Sign in to manage workspaces and members.'}
                   </p>
                 </div>
+                {currentUser?.role ? (
+                  <Badge variant="outline" className="shrink-0 capitalize">
+                    {currentUser.role}
+                  </Badge>
+                ) : null}
               </div>
-              {currentUser?.role ? (
-                <Badge className="shrink-0 border border-cyan-400/20 bg-cyan-400/10 text-cyan-100">
-                  {currentUser.role}
-                </Badge>
-              ) : null}
-            </div>
 
-            <Separator className="bg-white/10" />
+              <Separator />
 
-            <nav aria-label="Primary" className="flex flex-col gap-2">
-              {navItems.map((item) => {
-                const Icon = routeIcons[item.href] ?? GridIcon;
-                const isActive =
-                  item.kind === 'link'
-                    ? false
-                    : item.href === '/'
-                      ? pathname === '/'
-                      : pathname === item.href || pathname?.startsWith(`${item.href}/`);
-
-                const itemClassName = cn(
-                  'header-menu-link',
-                  isActive && 'header-menu-link--active',
-                );
-                const itemContent = (
-                  <>
-                    <span className="flex items-center gap-3">
-                      <span className="flex size-9 items-center justify-center rounded-2xl bg-white/6 text-slate-200">
-                        <Icon className="size-4" />
-                      </span>
-                      <span className="text-sm font-medium">{item.label}</span>
-                    </span>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                      Open
-                    </span>
-                  </>
-                );
-
-                if (item.kind === 'link') {
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => {
-                        setIsOpen(false);
-                      }}
-                      className={itemClassName}
-                    >
-                      {itemContent}
-                    </a>
-                  );
-                }
-
-                return (
-                  <Link
+              <nav aria-label="Primary menu" className="grid gap-1 lg:hidden">
+                {navItems.map((item) => (
+                  <NavItem
                     key={item.href}
-                    href={item.href}
+                    item={item}
+                    active={isNavItemActive(pathname, item)}
                     onClick={() => {
                       setIsOpen(false);
                     }}
-                    className={itemClassName}
-                  >
-                    {itemContent}
-                  </Link>
-                );
-              })}
-            </nav>
+                  />
+                ))}
+              </nav>
 
-            {currentUser ? (
-              <>
-                <Separator className="bg-white/10" />
-
-                {currentUser.organizations.length > 0 ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-white">Workspace</p>
-                        <p className="text-sm text-slate-400">
-                          {currentUser.organizations.length > 1
-                            ? 'Switch organizations from here instead of carrying the selector in the header.'
-                            : 'Your active organization stays here so the top bar can stay minimal.'}
+              {currentUser ? (
+                <>
+                  {currentUser.organizations.length > 0 ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                          Workspace
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                          Switch the active session.
                         </p>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="border-white/10 bg-white/5 text-slate-300"
-                      >
-                        {currentUser.organizations.length} org
-                        {currentUser.organizations.length === 1 ? '' : 's'}
-                      </Badge>
+                      <OrganizationSwitcher
+                        organizations={currentUser.organizations}
+                        currentOrganizationId={currentUser.organization?.id ?? null}
+                        currentOrganizationName={currentUser.organization?.name ?? null}
+                        forceVisible
+                        showLabel={false}
+                        className="min-w-0"
+                        onSwitchComplete={() => {
+                          setIsOpen(false);
+                        }}
+                      />
                     </div>
-                    <OrganizationSwitcher
-                      organizations={currentUser.organizations}
-                      currentOrganizationId={currentUser.organization?.id ?? null}
-                      currentOrganizationName={currentUser.organization?.name ?? null}
-                      forceVisible
-                      showLabel={false}
-                      className="min-w-0"
-                      onSwitchComplete={() => {
+                  ) : (
+                    <Link
+                      className="flex min-h-11 items-center justify-between gap-4 rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-teal-50 hover:text-teal-700 dark:text-slate-300 dark:hover:bg-teal-950/45 dark:hover:text-teal-200"
+                      href="/onboarding"
+                      onClick={() => {
                         setIsOpen(false);
                       }}
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                    <Link
-                      className="font-semibold text-cyan-200 hover:text-cyan-100"
-                      href="/onboarding"
                     >
                       Continue onboarding
-                    </Link>{' '}
-                    to create or join a workspace.
-                  </div>
-                )}
+                    </Link>
+                  )}
 
-                <Separator className="bg-white/10" />
-
-                <SignOutButton className="w-full justify-center" />
-              </>
-            ) : (
-              <>
-                <Separator className="bg-white/10" />
-
+                  <Separator />
+                  <SignOutButton className="w-full justify-center" />
+                </>
+              ) : (
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Link
                     href={'/sign-in' as never}
@@ -307,79 +240,11 @@ export function HeaderMenu({
                     <Button className="w-full justify-center">Create account</Button>
                   </Link>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
-  );
-}
-
-function MenuIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M4 7h16" />
-      <path d="M4 12h16" />
-      <path d="M10 17h10" />
-    </svg>
-  );
-}
-
-function ChevronIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function SparkleIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z" />
-      <path d="m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z" />
-    </svg>
-  );
-}
-
-function GridIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <rect x="4" y="4" width="6" height="6" rx="1.2" />
-      <rect x="14" y="4" width="6" height="6" rx="1.2" />
-      <rect x="4" y="14" width="6" height="6" rx="1.2" />
-      <rect x="14" y="14" width="6" height="6" rx="1.2" />
-    </svg>
-  );
-}
-
-function PulseIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M3 12h4l2.5-5 3 10 2.5-5H21" />
-    </svg>
-  );
-}
-
-function TeamIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-      <path d="M16.5 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-      <path d="M3.5 19a4.5 4.5 0 0 1 9 0" />
-      <path d="M13 18a3.5 3.5 0 0 1 7 0" />
-    </svg>
-  );
-}
-
-function DocsIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M7 4.5h7l3 3V19a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 19V6A1.5 1.5 0 0 1 7.5 4.5Z" />
-      <path d="M14 4.5V8h3.5" />
-      <path d="M9 12h6" />
-      <path d="M9 15.5h6" />
-    </svg>
   );
 }

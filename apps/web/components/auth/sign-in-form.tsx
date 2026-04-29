@@ -49,17 +49,26 @@ export function SignInForm({ redirectTo }: { redirectTo: string | undefined }) {
       }}
     >
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200" htmlFor="sign-in-email">
+        <label
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+          htmlFor="sign-in-email"
+        >
           Work email
         </label>
         <Input id="sign-in-email" name="email" type="email" placeholder="jane@acme.com" required />
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <label className="text-sm font-medium text-slate-200" htmlFor="sign-in-password">
+          <label
+            className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            htmlFor="sign-in-password"
+          >
             Password
           </label>
-          <Link href={'/forgot-password' as never} className="text-xs font-semibold text-cyan-300">
+          <Link
+            href={'/forgot-password' as never}
+            className="text-xs font-semibold text-teal-700 dark:text-teal-300"
+          >
             Forgot password?
           </Link>
         </div>
@@ -71,7 +80,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string | undefined }) {
           required
         />
       </div>
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Signing in...' : 'Sign in'}
       </Button>

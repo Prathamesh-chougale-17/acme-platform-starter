@@ -17,7 +17,9 @@ export function ResetPasswordForm({ token }: { token: string | undefined }) {
   const [isPending, startTransition] = useTransition();
 
   if (!token) {
-    return <p className="text-sm text-rose-300">Reset token missing or expired.</p>;
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">Reset token missing or expired.</p>
+    );
   }
 
   return (
@@ -55,7 +57,10 @@ export function ResetPasswordForm({ token }: { token: string | undefined }) {
       }}
     >
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200" htmlFor="reset-password">
+        <label
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+          htmlFor="reset-password"
+        >
           New password
         </label>
         <Input
@@ -66,7 +71,7 @@ export function ResetPasswordForm({ token }: { token: string | undefined }) {
           required
         />
       </div>
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Updating password...' : 'Reset password'}
       </Button>

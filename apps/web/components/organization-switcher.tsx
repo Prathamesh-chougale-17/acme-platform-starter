@@ -74,11 +74,11 @@ export function OrganizationSwitcher({
         )}
       >
         {showLabel ? (
-          <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+          <span className="px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
             Workspace
           </span>
         ) : null}
-        <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300">
           <span className="block truncate">{currentOrganizationName}</span>
         </div>
       </div>
@@ -90,7 +90,7 @@ export function OrganizationSwitcher({
       className={cn('min-w-72 flex-col gap-2', forceVisible ? 'flex' : 'hidden md:flex', className)}
     >
       {showLabel ? (
-        <span className="px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+        <span className="px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Workspace
         </span>
       ) : null}
@@ -131,7 +131,7 @@ export function OrganizationSwitcher({
         }}
         disabled={isPending || organizationsQuery.isPending}
       >
-        <SelectTrigger className="h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-slate-200 shadow-none focus-visible:border-cyan-400/40 focus-visible:ring-2 focus-visible:ring-cyan-400/20">
+        <SelectTrigger className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-none focus-visible:border-teal-500/40 focus-visible:ring-2 focus-visible:ring-teal-500/20 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300 dark:focus-visible:border-teal-400/40 dark:focus-visible:ring-teal-400/20">
           <SelectValue placeholder={currentOrganizationName}>
             {(value: string | null) =>
               organizations.find((organization) => organization.id === value)?.name ??
@@ -139,12 +139,12 @@ export function OrganizationSwitcher({
             }
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl">
+        <SelectContent className="rounded-lg border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-800 dark:bg-slate-950">
           {organizations.map((organization) => (
             <SelectItem
               key={organization.id}
               value={organization.id}
-              className="rounded-md text-slate-100"
+              className="rounded-md text-slate-700 dark:text-slate-300"
             >
               {organization.name}
             </SelectItem>

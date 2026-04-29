@@ -50,13 +50,16 @@ export function ForgotPasswordForm() {
       }}
     >
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200" htmlFor="forgot-email">
+        <label
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+          htmlFor="forgot-email"
+        >
           Account email
         </label>
         <Input id="forgot-email" name="email" type="email" placeholder="jane@acme.com" required />
       </div>
-      {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {notice ? <p className="text-sm text-emerald-700 dark:text-emerald-300">{notice}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Sending reset link...' : 'Send reset link'}
       </Button>

@@ -77,13 +77,19 @@ export function SignUpForm({
     >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-200" htmlFor="sign-up-name">
+          <label
+            className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            htmlFor="sign-up-name"
+          >
             Full name
           </label>
           <Input id="sign-up-name" name="name" placeholder="Jane Doe" required />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-200" htmlFor="sign-up-email">
+          <label
+            className="text-sm font-medium text-slate-700 dark:text-slate-300"
+            htmlFor="sign-up-email"
+          >
             Work email
           </label>
           {invitationId ? (
@@ -114,7 +120,10 @@ export function SignUpForm({
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200" htmlFor="sign-up-password">
+        <label
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
+          htmlFor="sign-up-password"
+        >
           Password
         </label>
         <Input
@@ -126,15 +135,18 @@ export function SignUpForm({
         />
       </div>
       {invitationPreview ? (
-        <p className="text-sm leading-6 text-slate-300">
+        <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
           This account will be created for an invitation to{' '}
-          <strong className="text-white">{invitationPreview.organizationName}</strong>.
+          <strong className="text-slate-950 dark:text-slate-50">
+            {invitationPreview.organizationName}
+          </strong>
+          .
         </p>
       ) : null}
       {invitationPreviewQuery.isError ? (
-        <p className="text-sm text-rose-300">Unable to load invitation details.</p>
+        <p className="text-sm text-red-600 dark:text-red-400">Unable to load invitation details.</p>
       ) : null}
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button
         type="submit"
         className="w-full"

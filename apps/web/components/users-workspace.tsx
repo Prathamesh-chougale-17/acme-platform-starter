@@ -11,12 +11,6 @@ import {
   AvatarFallback,
   Badge,
   Button,
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Input,
   Select,
   SelectContent,
@@ -24,7 +18,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
   Skeleton,
 } from '@acme/ui';
 import type {
@@ -86,6 +79,30 @@ const getAuditSummary = (entry: AuditLogEntryDto) => {
       return `${getActorLabel(entry)} completed an organization change.`;
   }
 };
+
+const pageHeaderClassName =
+  'flex flex-col gap-4 border-b border-slate-200 pb-5 pt-3 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between';
+const eyebrowClassName =
+  'text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400';
+const pageTitleClassName =
+  'mt-1 text-4xl font-semibold leading-none text-slate-950 dark:text-slate-50 md:text-6xl';
+const pageSubtitleClassName =
+  'mt-3 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300';
+const metricClassName =
+  'rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-none';
+const metricLabelClassName =
+  'text-xs font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400';
+const metricValueClassName =
+  'mt-2 text-3xl font-semibold leading-none text-slate-950 dark:text-slate-50';
+const panelClassName =
+  'rounded-xl border border-slate-200 bg-white/85 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-none';
+const panelHeaderClassName =
+  'flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-slate-800';
+const panelBodyClassName = 'p-4';
+const sectionTitleClassName = 'text-base font-semibold text-slate-950 dark:text-slate-50';
+const sectionCopyClassName = 'mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400';
+const dataRowClassName =
+  'flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3 last:border-b-0 dark:border-slate-800';
 
 export function UsersWorkspace({
   viewer,
@@ -158,21 +175,21 @@ export function UsersWorkspace({
 
   if (!activeOrganization) {
     return (
-      <div className="space-y-8">
-        <div className="space-y-3">
-          <Badge>Workspace Required</Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Finish onboarding
-          </h1>
-          <p className="max-w-4xl text-base leading-7 text-slate-300">
-            Choose an invited workspace or create your first workspace before managing teammates.
-          </p>
-        </div>
+      <div className="flex flex-col gap-6">
+        <section className={pageHeaderClassName}>
+          <div>
+            <p className={eyebrowClassName}>Workspace Required</p>
+            <h1 className={pageTitleClassName}>Finish onboarding</h1>
+            <p className={pageSubtitleClassName}>
+              Choose an invited workspace or create your first workspace before managing teammates.
+            </p>
+          </div>
+        </section>
 
         <Alert>
           <AlertTitle>No active workspace selected</AlertTitle>
           <AlertDescription>
-            <Link className="font-semibold text-cyan-200 hover:text-cyan-100" href="/onboarding">
+            <Link className="font-semibold text-teal-700 dark:text-teal-300" href="/onboarding">
               Continue onboarding
             </Link>{' '}
             to activate the right workspace for this session.
@@ -183,85 +200,127 @@ export function UsersWorkspace({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-3">
-        <Badge>Organization Members</Badge>
-        <h1 className="text-4xl font-semibold tracking-tight text-white">
-          {canInviteMembers ? 'Invite and manage teammates' : 'View organization teammates'}
-        </h1>
-        <p className="max-w-3xl text-base leading-7 text-slate-300">
-          Active organization: {activeOrganization.name}. The same session and role data are
-          consumed by Next.js, Better Auth, and the Hono API.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-6">
+      <section className={pageHeaderClassName}>
+        <div>
+          <p className={eyebrowClassName}>Organization Members</p>
+          <h1 className={pageTitleClassName}>
+            {canInviteMembers ? 'Team access' : 'Workspace directory'}
+          </h1>
+          <p className={pageSubtitleClassName}>
+            {activeOrganization.name} is the active organization for this session.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant={memberRoleVariant[effectiveViewer.role ?? 'member'] ?? 'outline'}>
             {effectiveViewer.role ?? 'member'}
           </Badge>
-          <span className="text-sm text-slate-400">
-            {canInviteMembers
-              ? 'This workspace can invite teammates and access operational dashboards.'
-              : 'This workspace is read-only for member management and cannot access operational dashboards.'}
-          </span>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void Promise.all([
+                workspaceQuery.refetch(),
+                canInviteMembers ? auditLogsQuery.refetch() : Promise.resolve(),
+              ])
+            }
+          >
+            {workspaceQuery.isFetching && !workspaceQuery.isPending ? 'Refreshing' : 'Refresh'}
+          </Button>
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.2fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>{canInviteMembers ? 'Invite a teammate' : 'Role-aware workspace'}</CardTitle>
-            <CardDescription>
-              {canInviteMembers
-                ? 'Owner and admin roles can invite members into the active organization.'
-                : 'Owners and admins can invite teammates. Members can browse the current organization only.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {deniedRoute ? (
-              <Alert variant="destructive">
-                <AlertTitle>Access denied for {deniedRoute}</AlertTitle>
-                <AlertDescription>
-                  Your current workspace role is <strong>{effectiveViewer.role ?? 'member'}</strong>{' '}
-                  in <strong>{activeOrganization.name}</strong>. Switch the active workspace if you
-                  need an organization where you are an owner or admin.
-                </AlertDescription>
-              </Alert>
-            ) : null}
+      <section className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))]">
+        <div className={metricClassName}>
+          <p className={metricLabelClassName}>Members</p>
+          <p className={metricValueClassName}>{members.length}</p>
+        </div>
+        <div className={metricClassName}>
+          <p className={metricLabelClassName}>Pending invites</p>
+          <p className={metricValueClassName}>{invitations.length}</p>
+        </div>
+        <div className={metricClassName}>
+          <p className={metricLabelClassName}>Access mode</p>
+          <p className={metricValueClassName}>{canInviteMembers ? 'Manage' : 'Read'}</p>
+        </div>
+      </section>
+
+      {deniedRoute ? (
+        <Alert variant="destructive">
+          <AlertTitle>Access denied for {deniedRoute}</AlertTitle>
+          <AlertDescription>
+            Your role is <strong>{effectiveViewer.role ?? 'member'}</strong> in{' '}
+            <strong>{activeOrganization.name}</strong>. Switch workspace if you need owner or admin
+            access.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
+        <div className={panelClassName}>
+          <div className={panelHeaderClassName}>
+            <div>
+              <h2 className={sectionTitleClassName}>
+                {canInviteMembers ? 'Invite Teammate' : 'Current Access'}
+              </h2>
+              <p className={sectionCopyClassName}>
+                {canInviteMembers
+                  ? 'Owners and admins can add members to the active organization.'
+                  : 'Member management is limited to owners and admins.'}
+              </p>
+            </div>
+          </div>
+          <div className={panelBodyClassName}>
             {canInviteMembers ? (
-              <>
-                <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                  <Input
-                    placeholder="jane@example.com"
-                    type="email"
-                    value={inviteForm.email}
-                    onChange={(event) =>
-                      setInviteForm((current) => ({ ...current, email: event.target.value }))
-                    }
-                  />
-                  <Select
-                    value={inviteForm.role}
-                    onValueChange={(value: string | null) => {
-                      if (!value) {
-                        return;
+              <div className="space-y-4">
+                <form className="space-y-3" onSubmit={handleSubmit}>
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium text-slate-700 dark:text-slate-300"
+                      htmlFor="invite-email"
+                    >
+                      Email
+                    </label>
+                    <Input
+                      id="invite-email"
+                      placeholder="jane@example.com"
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(event) =>
+                        setInviteForm((current) => ({ ...current, email: event.target.value }))
                       }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium text-slate-700 dark:text-slate-300"
+                      htmlFor="invite-role"
+                    >
+                      Role
+                    </label>
+                    <Select
+                      value={inviteForm.role}
+                      onValueChange={(value: string | null) => {
+                        if (!value) return;
 
-                      setInviteForm((current) => ({
-                        ...current,
-                        role: value as CreateInvitationInput['role'],
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                        setInviteForm((current) => ({
+                          ...current,
+                          role: value as CreateInvitationInput['role'],
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="invite-role" className="w-full">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button type="submit" className="w-full" disabled={isInviting}>
-                    {isInviting ? 'Sending invitation...' : 'Send invitation'}
+                    {isInviting ? 'Sending invitation' : 'Send invitation'}
                   </Button>
                 </form>
                 {notice ? (
@@ -276,182 +335,188 @@ export function UsersWorkspace({
                     <AlertDescription>{setupError ?? errorMessage}</AlertDescription>
                   </Alert>
                 ) : null}
-              </>
+              </div>
             ) : (
               <Alert>
                 <AlertTitle>Member access is active</AlertTitle>
                 <AlertDescription>
-                  This account can view teammates in the active organization, but invitation
-                  management and operational dashboards are reserved for owners and admins.
+                  You can view teammates in this organization. Invitation management is restricted.
                 </AlertDescription>
               </Alert>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Members</CardTitle>
-            <CardAction>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  void Promise.all([
-                    workspaceQuery.refetch(),
-                    canInviteMembers ? auditLogsQuery.refetch() : Promise.resolve(),
-                  ])
-                }
-              >
-                {workspaceQuery.isFetching && !workspaceQuery.isPending
-                  ? 'Refreshing...'
-                  : 'Refresh'}
-              </Button>
-            </CardAction>
-            <CardDescription>Loaded from the protected Hono service layer.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+        <div className={`${panelClassName} overflow-hidden`}>
+          <div className={panelHeaderClassName}>
+            <div>
+              <h2 className={sectionTitleClassName}>Members</h2>
+              <p className={sectionCopyClassName}>Loaded from the protected Hono service layer.</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
             {workspaceQuery.isPending ? (
-              <>
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <Skeleton key={index} className="h-16 w-full" />
+              <div className="space-y-2 p-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-14 w-full" />
                 ))}
-              </>
+              </div>
             ) : workspaceQuery.isError ? (
-              <Alert variant="destructive">
-                <AlertTitle>Unable to load members</AlertTitle>
-                <AlertDescription>{getErrorMessage(workspaceQuery.error)}</AlertDescription>
-              </Alert>
+              <div className="p-4">
+                <Alert variant="destructive">
+                  <AlertTitle>Unable to load members</AlertTitle>
+                  <AlertDescription>{getErrorMessage(workspaceQuery.error)}</AlertDescription>
+                </Alert>
+              </div>
             ) : members.length === 0 ? (
-              <Alert>
-                <AlertTitle>No members yet</AlertTitle>
-                <AlertDescription>
-                  Invite the first teammate from the form to start building inside this
-                  organization.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <>
-                {members.map((member, index) => (
-                  <div key={member.id} className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
-                      <Avatar size="lg">
-                        <AvatarFallback>
-                          {getInitials(member.user.name ?? member.user.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-white">
-                          {member.user.name ?? member.user.email}
-                        </p>
-                        <p className="truncate text-muted-foreground">{member.user.email}</p>
-                      </div>
-                      <Badge variant={memberRoleVariant[member.role] ?? 'outline'}>
-                        {member.role}
-                      </Badge>
-                    </div>
-                    {index < members.length - 1 ? <Separator /> : null}
-                  </div>
-                ))}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Pending invitations</CardTitle>
-            <CardDescription>These links are delivered by the shared auth mailer.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {canInviteMembers ? (
-              invitations.length === 0 ? (
+              <div className="p-4">
                 <Alert>
-                  <AlertTitle>No pending invitations</AlertTitle>
+                  <AlertTitle>No members yet</AlertTitle>
                   <AlertDescription>
-                    New invites will appear here until they are accepted or expire.
+                    Invite the first teammate to start building inside this organization.
                   </AlertDescription>
                 </Alert>
-              ) : (
-                <>
-                  {invitations.map((invitation, index) => (
-                    <div key={invitation.id} className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between gap-3 rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-white">{invitation.email}</p>
-                          <p className="text-muted-foreground">
-                            Expires {new Date(invitation.expiresAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <Badge variant={invitation.role === 'admin' ? 'secondary' : 'outline'}>
-                          {invitation.role}
-                        </Badge>
-                      </div>
-                      {index < invitations.length - 1 ? <Separator /> : null}
-                    </div>
-                  ))}
-                </>
-              )
+              </div>
             ) : (
+              <table className="w-full min-w-[42rem] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.08em] text-slate-500 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Member</th>
+                    <th className="px-4 py-3 font-semibold">Email</th>
+                    <th className="px-4 py-3 font-semibold">Role</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {members.map((member) => (
+                    <tr key={member.id} className="bg-white dark:bg-slate-950/60">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar size="lg">
+                            <AvatarFallback>
+                              {getInitials(member.user.name ?? member.user.email)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-slate-950 dark:text-slate-50">
+                            {member.user.name ?? member.user.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {member.user.email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={memberRoleVariant[member.role] ?? 'outline'}>
+                          {member.role}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className={panelClassName}>
+        <div className={panelHeaderClassName}>
+          <div>
+            <h2 className={sectionTitleClassName}>Pending Invitations</h2>
+            <p className={sectionCopyClassName}>
+              Open invitations that have not been accepted yet.
+            </p>
+          </div>
+        </div>
+        {canInviteMembers ? (
+          invitations.length === 0 ? (
+            <div className={panelBodyClassName}>
               <Alert>
-                <AlertTitle>Invitation visibility is restricted</AlertTitle>
+                <AlertTitle>No pending invitations</AlertTitle>
                 <AlertDescription>
-                  Owners and admins can review pending invitations for the active organization.
+                  New invites will appear here until they are accepted.
                 </AlertDescription>
               </Alert>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          ) : (
+            <div>
+              {invitations.map((invitation) => (
+                <div key={invitation.id} className={dataRowClassName}>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-950 dark:text-slate-50">
+                      {invitation.email}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      Expires {new Date(invitation.expiresAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <Badge variant={invitation.role === 'admin' ? 'secondary' : 'outline'}>
+                    {invitation.role}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className={panelBodyClassName}>
+            <Alert>
+              <AlertTitle>Invitation visibility is restricted</AlertTitle>
+              <AlertDescription>
+                Owners and admins can review pending invitations for this organization.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+      </section>
 
-        {canInviteMembers ? (
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Audit activity</CardTitle>
-              <CardDescription>
-                Successful organization access changes are written to the database-backed audit log.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {auditLogsQuery.isPending ? (
-                <>
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} className="h-16 w-full" />
-                  ))}
-                </>
-              ) : auditLogsQuery.isError ? (
+      {canInviteMembers ? (
+        <section className={panelClassName}>
+          <div className={panelHeaderClassName}>
+            <div>
+              <h2 className={sectionTitleClassName}>Audit Activity</h2>
+              <p className={sectionCopyClassName}>Recent organization access changes.</p>
+            </div>
+          </div>
+          <div>
+            {auditLogsQuery.isPending ? (
+              <div className="space-y-2 p-4">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-14 w-full" />
+                ))}
+              </div>
+            ) : auditLogsQuery.isError ? (
+              <div className={panelBodyClassName}>
                 <Alert variant="destructive">
                   <AlertTitle>Unable to load audit activity</AlertTitle>
                   <AlertDescription>{getErrorMessage(auditLogsQuery.error)}</AlertDescription>
                 </Alert>
-              ) : auditLogsQuery.data?.items.length ? (
-                <>
-                  {auditLogsQuery.data.items.map((entry, index) => (
-                    <div key={entry.id} className="flex flex-col gap-3">
-                      <div className="rounded-3xl border border-border/80 bg-background/35 p-4 text-sm text-foreground">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="font-semibold text-white">{getAuditSummary(entry)}</p>
-                          <Badge variant="outline">{entry.eventType}</Badge>
-                        </div>
-                        <p className="mt-2 text-muted-foreground">
-                          {new Date(entry.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      {index < auditLogsQuery.data.items.length - 1 ? <Separator /> : null}
-                    </div>
-                  ))}
-                </>
-              ) : (
+              </div>
+            ) : auditLogsQuery.data?.items.length ? (
+              auditLogsQuery.data.items.map((entry) => (
+                <div key={entry.id} className={dataRowClassName}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-950 dark:text-slate-50">
+                      {getAuditSummary(entry)}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {new Date(entry.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{entry.eventType}</Badge>
+                </div>
+              ))
+            ) : (
+              <div className={panelBodyClassName}>
                 <Alert>
                   <AlertTitle>No audit activity yet</AlertTitle>
                   <AlertDescription>
-                    New organization creation and invitation activity will appear here after the
-                    next successful change.
+                    Organization creation and invitation activity will appear here.
                   </AlertDescription>
                 </Alert>
-              )}
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
