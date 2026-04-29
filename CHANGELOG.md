@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.4.0...v0.4.1) (2026-04-29)
+
+### Features
+
+- **cli:** implement copyEnvFiles function to automate .env file setup ([e83c331](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/e83c3311aa751fdcb9ea2741ccc5bb4b415110bc))
+
+### Bug Fixes
+
+- **docs:** standardize import quotes in SKILL.MD for better readability ([ba7465d](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/ba7465db6bd41e8f9250fa787dc5dd7197f518bb))
+
 ## [0.4.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.6...v0.4.0) (2026-04-29)
 
 ### Features
