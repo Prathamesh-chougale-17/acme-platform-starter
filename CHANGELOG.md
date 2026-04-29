@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.6...v0.4.0) (2026-04-29)
+
+### Features
+
+- **cli:** add support for optional agent skills in scaffolding ([780a710](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/780a710b3e839332e0f485c4c5f1a72fe9033264))
+
+### Bug Fixes
+
+- **release:** extract patch changelog notes ([0651628](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/0651628588f26f18b7efce4822adbe1d16a41fee))
+
 ### [0.3.6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.3.5...v0.3.6) (2026-04-29)
 
 ### Bug Fixes
