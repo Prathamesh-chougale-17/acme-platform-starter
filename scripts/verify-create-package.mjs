@@ -137,8 +137,8 @@ const directPackageJson = JSON.parse(readFileSync(join(directTarget, 'package.js
 assert.equal(directPackageJson.name, 'from-bin');
 assert.equal(directPackageJson.private, true);
 assert.ok(
-  !existsSync(join(directTarget, 'skills-lock.json')),
-  'Default scaffolds should not include skills-lock.json',
+  existsSync(join(directTarget, 'skills-lock.json')),
+  'Default scaffolds should include skills-lock.json',
 );
 
 const secondRunResult = runCommand(nodeCommand, [cliPath, directTarget, '--yes'], {
@@ -194,8 +194,8 @@ const tarballPackageJson = JSON.parse(readFileSync(join(tarballTarget, 'package.
 assert.equal(tarballPackageJson.name, 'from-tarball');
 assert.equal(tarballPackageJson.private, true);
 assert.ok(
-  !existsSync(join(tarballTarget, 'skills-lock.json')),
-  'Default scaffolds from the packed tarball should not include skills-lock.json',
+  existsSync(join(tarballTarget, 'skills-lock.json')),
+  'Default scaffolds from the packed tarball should include skills-lock.json',
 );
 
 copyEnvExampleIfPresent(tarballTarget);

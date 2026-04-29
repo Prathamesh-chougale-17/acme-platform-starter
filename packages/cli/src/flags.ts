@@ -9,8 +9,8 @@ export interface CliFlags {
 export const USAGE = `Usage: create-acme-platform [directory] [options]
 
 Options:
-  --yes, -y      Skip prompts and use defaults (all features, pnpm, no skills)
-  --with-skills  Install agent skills from skills-lock.json with npx skills@latest
+  --yes, -y      Skip prompts and use defaults (all features, pnpm, skills)
+  --with-skills  Install agent skills from skills-lock.json with npx skills@latest (default)
   --no-skills    Do not copy or install agent skills
   --force        Overwrite an existing non-empty target directory
   --help         Show this help message

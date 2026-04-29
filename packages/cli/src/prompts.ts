@@ -64,7 +64,7 @@ export const runWizard = async (initialTarget: string | undefined): Promise<Wiza
         hint: 'copies skills-lock.json and restores skills with npx skills@latest',
       },
     ],
-    initialValues: ['observability', 'redis'],
+    initialValues: ['observability', 'redis', 'skills'],
     required: false,
   });
   if (isCancel(featureAnswer)) {

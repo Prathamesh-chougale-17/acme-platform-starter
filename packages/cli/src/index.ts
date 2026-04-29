@@ -30,7 +30,7 @@ const main = async (): Promise<void> => {
   let packageManager = 'pnpm';
   let includeObservability = true;
   let includeRedis = true;
-  let includeSkills = false;
+  let includeSkills = true;
 
   if (skipPrompts) {
     if (!resolvedTargetArg) {
@@ -38,7 +38,7 @@ const main = async (): Promise<void> => {
       console.error(USAGE);
       process.exit(1);
     }
-    includeSkills = includeSkillsFlag ?? false;
+    includeSkills = includeSkillsFlag ?? true;
   } else {
     const result = await runWizard(resolvedTargetArg);
     resolvedTargetArg = result.targetArg;

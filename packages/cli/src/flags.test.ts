@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseFlags } from './flags.js';
 
 describe('parseFlags', () => {
-  it('defaults agent skills to an explicit no-op', () => {
+  it('leaves agent skills to default handling when not specified', () => {
     expect(parseFlags(['node', 'cli', 'my-app', '--yes'])).toMatchObject({
       includeSkills: undefined,
       skipPrompts: true,

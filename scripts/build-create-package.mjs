@@ -85,7 +85,7 @@ Scaffold the Acme Platform starter monorepo.
 npm create acme-platform@latest my-app
 pnpm create acme-platform my-app
 npx create-acme-platform my-app
-npx create-acme-platform my-app --with-skills
+npx create-acme-platform my-app --no-skills
 \`\`\`
 
 ## What it creates
@@ -97,7 +97,7 @@ npx create-acme-platform my-app --with-skills
 - Redis/BullMQ async jobs
 - Turborepo + pnpm workspace setup
 - Observability stack and CI workflows
-- Optional agent skills restored from skills-lock.json with the Skills CLI
+- Agent skills restored from skills-lock.json with the Skills CLI by default
 
 ## After scaffolding
 
