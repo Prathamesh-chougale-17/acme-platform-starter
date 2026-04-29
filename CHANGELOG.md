@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.4.1...v1.0.0) (2026-04-29)
+
+### Bug Fixes
+
+- **gitignore:** add tmp directory to .gitignore ([a7bafc6](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/a7bafc6d06213263aa7fb1b8477a59f3db779eec))
+
 ### [0.4.1](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v0.4.0...v0.4.1) (2026-04-29)
 
 ### Features
