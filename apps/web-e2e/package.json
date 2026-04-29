@@ -8,7 +8,7 @@
     "test:e2e:headed": "pnpm exec playwright test --headed"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@types/node": "^25.6.0"
+    "@playwright/test": "catalog:tooling",
+    "@types/node": "catalog:tooling"
   }
 }

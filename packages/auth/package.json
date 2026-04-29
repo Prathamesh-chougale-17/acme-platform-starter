@@ -11,9 +11,9 @@
     "@acme/db": "workspace:*",
     "@acme/jobs": "workspace:*",
     "@acme/shared": "workspace:*",
-    "@better-auth/drizzle-adapter": "^1.6.2",
-    "better-auth": "^1.6.2",
-    "nodemailer": "^8.0.5",
+    "@better-auth/drizzle-adapter": "catalog:auth",
+    "better-auth": "catalog:auth",
+    "nodemailer": "catalog:",
     "resend": "^6.10.0"
   },
   "scripts": {
