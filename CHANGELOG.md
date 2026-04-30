@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.3](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v1.0.2...v1.0.3) (2026-04-30)
+
+### Features
+
+- **cli:** implement gitignore template restoration and conversion ([4fb13f7](https://github.com/Prathamesh-chougale-17/acme-platform-starter/commit/4fb13f75f16523098ed23e992558d3c5219c0835))
+
 ### [1.0.2](https://github.com/Prathamesh-chougale-17/acme-platform-starter/compare/v1.0.1...v1.0.2) (2026-04-29)
 
 ### Bug Fixes
