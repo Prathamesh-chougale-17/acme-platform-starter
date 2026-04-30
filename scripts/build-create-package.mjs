@@ -5,6 +5,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -124,6 +125,10 @@ const shouldCopy = (sourcePath) => {
     return false;
   }
 
+  if (relativePath === '.husky/_' || relativePath.startsWith('.husky/_/')) {
+    return false;
+  }
+
   if (segments.some((segment) => excludedDirectoryNames.has(segment))) {
     return false;
   }
@@ -155,6 +160,22 @@ const copyIntoTemplate = (relativeSourcePath) => {
     recursive: true,
     filter: shouldCopy,
   });
+};
+
+const convertGitignoreFilesToTemplates = (directoryPath) => {
+  for (const entry of readdirSync(directoryPath, { withFileTypes: true })) {
+    const entryPath = join(directoryPath, entry.name);
+
+    if (entry.isDirectory()) {
+      convertGitignoreFilesToTemplates(entryPath);
+      continue;
+    }
+
+    if (entry.isFile() && entry.name === '.gitignore') {
+      writeFileSync(join(directoryPath, '.gitignore.template'), readFileSync(entryPath));
+      rmSync(entryPath, { force: true });
+    }
+  }
 };
 
 const sanitizeTemplatePackageJson = () => {
@@ -220,6 +241,7 @@ for (const entry of templateEntries) {
   copyIntoTemplate(entry);
 }
 
+convertGitignoreFilesToTemplates(templateDir);
 writeFileSync(join(templateDir, '.gitignore.template'), readFileSync(join(rootDir, '.gitignore')));
 writeFileSync(
   join(publishDir, '.npmignore'),

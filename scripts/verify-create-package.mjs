@@ -72,6 +72,8 @@ for (const requiredPath of [
   join(templateDir, '.github', 'workflows', 'ci.yml'),
   join(templateDir, '.github', 'workflows', 'database-migrate.yml'),
   join(templateDir, '.gitignore.template'),
+  join(templateDir, 'apps', 'api', '.gitignore.template'),
+  join(templateDir, 'apps', 'web', '.gitignore.template'),
   join(templateDir, 'scripts', 'prepare.mjs'),
   join(templateDir, 'skills-lock.json'),
 ]) {
@@ -85,13 +87,16 @@ for (const excludedPath of [
   join(templateDir, '.claude'),
   join(templateDir, '.idea'),
   join(templateDir, '.vscode'),
+  join(templateDir, '.husky', '_'),
   join(templateDir, 'coverage'),
   join(templateDir, 'dist'),
   join(templateDir, 'packages', 'cli'),
   join(templateDir, 'node_modules'),
   join(templateDir, 'test-results'),
+  join(templateDir, 'apps', 'api', '.gitignore'),
   join(templateDir, 'apps', 'api', '.env'),
   join(templateDir, 'apps', 'api', 'dist'),
+  join(templateDir, 'apps', 'web', '.gitignore'),
   join(templateDir, 'apps', 'web', '.env'),
   join(templateDir, 'apps', 'web', '.next'),
   join(templateDir, 'apps', 'web', 'tsconfig.tsbuildinfo'),
@@ -142,8 +147,24 @@ assert.ok(
   'Default scaffolds should include .gitignore',
 );
 assert.ok(
+  existsSync(join(directTarget, 'apps', 'api', '.gitignore')),
+  'Default scaffolds should include apps/api/.gitignore',
+);
+assert.ok(
+  existsSync(join(directTarget, 'apps', 'web', '.gitignore')),
+  'Default scaffolds should include apps/web/.gitignore',
+);
+assert.ok(
   !existsSync(join(directTarget, '.gitignore.template')),
   'Default scaffolds should not leave .gitignore.template behind',
+);
+assert.ok(
+  !existsSync(join(directTarget, 'apps', 'api', '.gitignore.template')),
+  'Default scaffolds should not leave apps/api/.gitignore.template behind',
+);
+assert.ok(
+  !existsSync(join(directTarget, 'apps', 'web', '.gitignore.template')),
+  'Default scaffolds should not leave apps/web/.gitignore.template behind',
 );
 assert.ok(
   existsSync(join(directTarget, 'skills-lock.json')),
@@ -207,8 +228,24 @@ assert.ok(
   'Default scaffolds from the packed tarball should include .gitignore',
 );
 assert.ok(
+  existsSync(join(tarballTarget, 'apps', 'api', '.gitignore')),
+  'Default scaffolds from the packed tarball should include apps/api/.gitignore',
+);
+assert.ok(
+  existsSync(join(tarballTarget, 'apps', 'web', '.gitignore')),
+  'Default scaffolds from the packed tarball should include apps/web/.gitignore',
+);
+assert.ok(
   !existsSync(join(tarballTarget, '.gitignore.template')),
   'Default scaffolds from the packed tarball should not leave .gitignore.template behind',
+);
+assert.ok(
+  !existsSync(join(tarballTarget, 'apps', 'api', '.gitignore.template')),
+  'Default scaffolds from the packed tarball should not leave apps/api/.gitignore.template behind',
+);
+assert.ok(
+  !existsSync(join(tarballTarget, 'apps', 'web', '.gitignore.template')),
+  'Default scaffolds from the packed tarball should not leave apps/web/.gitignore.template behind',
 );
 assert.ok(
   existsSync(join(tarballTarget, 'skills-lock.json')),

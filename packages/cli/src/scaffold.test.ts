@@ -9,6 +9,7 @@ import {
   removeJobs,
   removeObservability,
   removeSkillsLock,
+  restoreGitignoreTemplates,
   toSlug,
 } from './scaffold.js';
 
@@ -371,6 +372,33 @@ describe('toSlug', () => {
       expect(
         readFileSync(join(targetDir, 'apps', 'api', 'src', 'services', 'user-service.ts'), 'utf8'),
       ).toContain('AppendAuditLogInput');
+    } finally {
+      rmSync(targetDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('gitignore scaffolding', () => {
+  it('restores root and nested gitignore template files', () => {
+    const targetDir = join(tmpdir(), `acme-scaffold-${crypto.randomUUID()}`);
+
+    writeProjectFile(targetDir, '.gitignore.template', 'root ignored files\n');
+    writeProjectFile(targetDir, 'apps/api/.gitignore.template', 'api ignored files\n');
+    writeProjectFile(targetDir, 'apps/web/.gitignore.template', 'web ignored files\n');
+
+    try {
+      restoreGitignoreTemplates(targetDir);
+
+      expect(readFileSync(join(targetDir, '.gitignore'), 'utf8')).toBe('root ignored files\n');
+      expect(readFileSync(join(targetDir, 'apps', 'api', '.gitignore'), 'utf8')).toBe(
+        'api ignored files\n',
+      );
+      expect(readFileSync(join(targetDir, 'apps', 'web', '.gitignore'), 'utf8')).toBe(
+        'web ignored files\n',
+      );
+      expect(existsSync(join(targetDir, '.gitignore.template'))).toBe(false);
+      expect(existsSync(join(targetDir, 'apps', 'api', '.gitignore.template'))).toBe(false);
+      expect(existsSync(join(targetDir, 'apps', 'web', '.gitignore.template'))).toBe(false);
     } finally {
       rmSync(targetDir, { recursive: true, force: true });
     }

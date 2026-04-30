@@ -144,7 +144,7 @@ template/
   docker-compose.yml
   eslint.config.mjs
   .env.example
-  .gitignore
+  .gitignore.template       Restored to .gitignore during scaffolding
   .dockerignore
   .husky/
   docs/
@@ -155,4 +155,4 @@ README.md                    Generated CLI usage README
 LICENSE
 ```
 
-Excluded from the template: `.git`, `.agents`, `.claude`, `.vscode`, `.idea`, `node_modules`, `dist`, `coverage`, `.next`, `packages/cli`, `test-results`, `.github/workflows/release.yml`
+Excluded from the template: `.git`, `.agents`, `.claude`, `.vscode`, `.idea`, `.husky/_`, `node_modules`, `dist`, `coverage`, `.next`, `packages/cli`, `test-results`, `.github/workflows/release.yml`
